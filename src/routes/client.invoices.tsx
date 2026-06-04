@@ -15,40 +15,44 @@ function ClientInvoicesPage() {
 
   const phaseOneInvoices = useMemo(() => {
     const generated: InvoiceRecord[] = timesheets
-      .filter((ts) => ts.status === "Approved")
-      .map((ts, idx) => {
+      .filter((timesheet) => timesheet.status === "Approved")
+      .map((timesheet, index) => {
         const billingRate = 80;
+
         return {
-          id: `generated-${ts.id}`,
-          invoiceNumber: `INV-${new Date().getFullYear()}-${(idx + 1).toString().padStart(4, "0")}`,
-          clientName: ts.client || "Client Account",
-          billingPeriod: `${ts.weekStartDate} to ${ts.weekEndDate}`,
-          employeeUID: ts.employeeUID,
-          resourceName: ts.employeeName,
-          project: ts.project || "-",
-          approvedHours: ts.totalHours,
+          id: `generated-${timesheet.id}`,
+          invoiceNumber: `INV-${new Date().getFullYear()}-${(index + 1)
+            .toString()
+            .padStart(4, "0")}`,
+          clientName: timesheet.client || "Client Account",
+          billingPeriod: `${timesheet.weekStartDate} to ${timesheet.weekEndDate}`,
+          employeeUID: timesheet.employeeUID,
+          resourceName: timesheet.employeeName,
+          project: timesheet.project || "-",
+          approvedHours: timesheet.totalHours,
           billingRate,
-          totalAmount: ts.totalHours * billingRate,
+          totalAmount: timesheet.totalHours * billingRate,
           status: "Draft",
-          sourceTimesheetId: ts.id,
-          createdAt: ts.updatedAt,
-          updatedAt: ts.updatedAt,
+          sourceTimesheetId: timesheet.id,
+          createdAt: timesheet.updatedAt,
+          updatedAt: timesheet.updatedAt,
         } satisfies InvoiceRecord;
       });
 
-    if (invoices.length > 0) return invoices;
-    return generated;
-  }, [timesheets, invoices]);
+    return invoices.length > 0 ? invoices : generated;
+  }, [invoices, timesheets]);
 
   return (
     <main className="min-h-screen bg-[linear-gradient(180deg,#f4f8ff_0%,#ffffff_100%)]">
       <InternalPortalNav portal="client" />
-      <section className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-8 space-y-6">
+      <section className="mx-auto max-w-7xl space-y-6 px-4 py-8 sm:px-6 lg:px-8">
         <PortalBanner extraMessage="Client login and secure billing access will be added in backend phase." />
 
         <div>
           <h1 className="text-2xl font-heading font-bold text-[#0B3D91]">Client Invoices</h1>
-          <p className="mt-1 text-slate-600">Phase 1 invoice view generated from approved timesheets.</p>
+          <p className="mt-1 text-slate-600">
+            Phase 1 invoice view generated from approved timesheets.
+          </p>
         </div>
 
         <div className="overflow-x-auto rounded-2xl border border-[#E5E7EB] bg-white p-5">
@@ -70,7 +74,9 @@ function ClientInvoicesPage() {
             <tbody>
               {phaseOneInvoices.length === 0 ? (
                 <tr>
-                  <td colSpan={10} className="py-8 text-center text-slate-500">No invoices available yet.</td>
+                  <td colSpan={10} className="py-8 text-center text-slate-500">
+                    No invoices available yet.
+                  </td>
                 </tr>
               ) : (
                 phaseOneInvoices.map((invoice) => (
@@ -78,14 +84,20 @@ function ClientInvoicesPage() {
                     <td className="py-3 font-semibold text-slate-900">{invoice.invoiceNumber}</td>
                     <td className="py-3">{invoice.clientName}</td>
                     <td className="py-3">{invoice.billingPeriod}</td>
-                    <td className="py-3 font-mono text-xs font-semibold text-[#1DA1F2]">{invoice.employeeUID}</td>
+                    <td className="py-3 font-mono text-xs font-semibold text-[#1DA1F2]">
+                      {invoice.employeeUID}
+                    </td>
                     <td className="py-3">{invoice.resourceName}</td>
                     <td className="py-3">{invoice.project}</td>
                     <td className="py-3">{invoice.approvedHours}</td>
                     <td className="py-3">${invoice.billingRate.toFixed(2)}</td>
-                    <td className="py-3 font-semibold text-[#0B3D91]">${invoice.totalAmount.toFixed(2)}</td>
+                    <td className="py-3 font-semibold text-[#0B3D91]">
+                      ${invoice.totalAmount.toFixed(2)}
+                    </td>
                     <td className="py-3">
-                      <span className="rounded-full bg-[#1DA1F2]/10 px-2 py-1 text-xs text-[#0B3D91]">{invoice.status}</span>
+                      <span className="rounded-full bg-[#1DA1F2]/10 px-2 py-1 text-xs text-[#0B3D91]">
+                        {invoice.status}
+                      </span>
                     </td>
                   </tr>
                 ))
