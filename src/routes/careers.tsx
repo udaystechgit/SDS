@@ -10,6 +10,7 @@ import {
   readJobRequirements,
   type JobRequirement,
 } from "@/lib/jobs";
+import { listJobRequirementsFn } from "@/lib/api/jobs.functions";
 
 export const Route = createFileRoute("/careers")({
   head: () => ({
@@ -38,14 +39,35 @@ function CareersPage() {
   const [jobTypeFilter, setJobTypeFilter] = useState("All Job Types");
 
   useEffect(() => {
-    setPublishedRoles(getPublishedJobRequirements(readJobRequirements()));
+    let cancelled = false;
+
+    const loadPublishedRoles = async () => {
+      try {
+        const result = await listJobRequirementsFn({ data: { onlyPublished: true } });
+        if (!cancelled && result.configured) {
+          setPublishedRoles(result.jobs);
+          return;
+        }
+      } catch {
+        // Fall back to local storage data if backend is not available yet.
+      }
+
+      if (!cancelled) {
+        setPublishedRoles(getPublishedJobRequirements(readJobRequirements()));
+      }
+    };
+
+    void loadPublishedRoles();
 
     const sync = () => {
       setPublishedRoles(getPublishedJobRequirements(readJobRequirements()));
     };
 
     window.addEventListener("storage", sync);
-    return () => window.removeEventListener("storage", sync);
+    return () => {
+      cancelled = true;
+      window.removeEventListener("storage", sync);
+    };
   }, []);
 
   const roleOptions =

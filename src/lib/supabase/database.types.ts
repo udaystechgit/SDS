@@ -1,0 +1,86 @@
+export type JobRequirementRow = {
+  id: string;
+  job_title: string;
+  department: string;
+  service_domain: string;
+  location: string;
+  job_type: string;
+  experience_level: string;
+  work_mode: string;
+  short_description: string;
+  responsibilities: string;
+  requirements_skills: string;
+  salary_range: string;
+  application_email: string;
+  status: string;
+  posted_date: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
+export type EmployeeRow = {
+  id: string;
+  uid: string;
+  full_name: string;
+  email: string;
+  phone: string;
+  job_title: string;
+  employee_type: string;
+  assigned_client: string;
+  assigned_project: string;
+  service_domain: string;
+  start_date: string;
+  end_date: string | null;
+  work_mode: string;
+  work_location: string;
+  hourly_rate: string;
+  billing_rate: string;
+  responsibilities: string;
+  required_skills: string;
+  status: string;
+  created_at: string;
+  updated_at: string;
+};
+
+export type ClientRequirementRow = {
+  id: string;
+  client_user_id: string | null;
+  client_name: string;
+  service_domain: string;
+  service_needed: string;
+  project_name: string;
+  location: string;
+  work_mode: string;
+  required_start_date: string | null;
+  expected_duration: string;
+  required_skills: string;
+  number_of_resources_needed: number;
+  budget_rate_range: string;
+  description: string;
+  priority: string;
+  status: string;
+  created_at: string;
+  updated_at: string;
+};
+
+export type EmployerRequirementRow = {
+  id: string;
+  employer_user_id: string | null;
+  employer_name: string;
+  job_title: string;
+  department: string;
+  client_project: string;
+  location: string;
+  job_type: string;
+  work_mode: string;
+  experience_level: string;
+  required_skills: string;
+  responsibilities: string;
+  number_of_openings: number;
+  start_date: string | null;
+  duration: string;
+  rate_range: string;
+  status: string;
+  created_at: string;
+  updated_at: string;
+};

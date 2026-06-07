@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useMemo, useState, type FormEvent, type ReactNode } from "react";
+import { useEffect, useMemo, useState, type FormEvent, type ReactNode } from "react";
 import { InternalPortalNav } from "@/components/InternalPortalNav";
 import { PortalBanner } from "@/components/PortalBanner";
 import {
@@ -10,6 +10,11 @@ import {
   saveEmployerRequirements,
   updateEmployerRequirement,
 } from "@/lib/employer-requirements";
+import {
+  listEmployerRequirementsFn,
+  upsertEmployerRequirementFn,
+} from "@/lib/api/employer-requirements.functions";
+import { getSupabaseBrowserClient } from "@/lib/supabase/client";
 
 export const Route = createFileRoute("/employer/jobs")({
   component: EmployerJobsPage,
@@ -38,13 +43,36 @@ const emptyForm: EmployerRequirementInput = {
 type FormErrors = Partial<Record<keyof EmployerRequirementInput, string>>;
 
 function EmployerJobsPage() {
-  const [requirements, setRequirements] = useState<EmployerRequirementRecord[]>(() =>
-    readEmployerRequirements(),
-  );
+  const [requirements, setRequirements] = useState<EmployerRequirementRecord[]>([]);
   const [form, setForm] = useState<EmployerRequirementInput>(emptyForm);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [errors, setErrors] = useState<FormErrors>({});
   const [message, setMessage] = useState("");
+  const [ownerUserId, setOwnerUserId] = useState<string | null>(null);
+
+  useEffect(() => {
+    void loadRequirements();
+  }, []);
+
+  useEffect(() => {
+    let mounted = true;
+
+    const resolveOwner = async () => {
+      const supabase = getSupabaseBrowserClient();
+      if (!supabase) return;
+
+      const { data } = await supabase.auth.getUser();
+      if (mounted) {
+        setOwnerUserId(data.user?.id ?? null);
+      }
+    };
+
+    void resolveOwner();
+
+    return () => {
+      mounted = false;
+    };
+  }, []);
 
   const editingRequirement = useMemo(
     () => requirements.find((r) => r.id === editingId) ?? null,
@@ -74,18 +102,54 @@ function EmployerJobsPage() {
     saveEmployerRequirements(next);
   }
 
+  async function loadRequirements() {
+    try {
+      const result = await listEmployerRequirementsFn({ data: {} });
+      if (result.configured) {
+        commit(result.requirements);
+        return;
+      }
+    } catch {
+      // Fall back to local cache.
+    }
+
+    setRequirements(readEmployerRequirements());
+  }
+
   function reset() {
     setForm(emptyForm);
     setEditingId(null);
     setErrors({});
   }
 
-  function onSubmit(e: FormEvent<HTMLFormElement>) {
+  async function onSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
 
     const nextErrors = validate(form);
     setErrors(nextErrors);
     if (Object.keys(nextErrors).length > 0) return;
+
+    try {
+      const result = await upsertEmployerRequirementFn({
+        data: {
+          id: editingRequirement?.id,
+          payload: form,
+          ownerUserId: ownerUserId ?? undefined,
+        },
+      });
+
+      if (result.configured && result.requirement) {
+        const next = editingRequirement
+          ? requirements.map((r) => (r.id === result.requirement!.id ? result.requirement! : r))
+          : [result.requirement, ...requirements];
+        commit(next);
+        setMessage(editingRequirement ? "Requirement updated successfully." : "Requirement created successfully.");
+        reset();
+        return;
+      }
+    } catch {
+      // Fall back to local flow.
+    }
 
     if (editingRequirement) {
       const next = requirements.map((r) =>
@@ -142,7 +206,7 @@ function EmployerJobsPage() {
         <h1 className="text-2xl font-heading font-bold text-[#0B3D91]">Employer Job Requirements</h1>
 
         <div className="grid xl:grid-cols-[1.1fr_1fr] gap-6">
-          <form onSubmit={onSubmit} className="rounded-3xl border border-[#E5E7EB] bg-white p-6 space-y-4">
+          <form onSubmit={(e) => void onSubmit(e)} className="rounded-3xl border border-[#E5E7EB] bg-white p-6 space-y-4">
             <div className="grid md:grid-cols-2 gap-4">
               <Field label="Employer Name" error={errors.employerName}>
                 <input className={inputClass(errors.employerName)} value={form.employerName} onChange={(e) => setField("employerName", e.target.value)} />

@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useState, type FormEvent, type ReactNode } from "react";
+import { useEffect, useState, type FormEvent, type ReactNode } from "react";
 import { InternalPortalNav } from "@/components/InternalPortalNav";
 import { PortalBanner } from "@/components/PortalBanner";
 import {
@@ -10,6 +10,11 @@ import {
   saveClientRequirements,
   updateClientRequirement,
 } from "@/lib/client-requirements";
+import {
+  listClientRequirementsFn,
+  upsertClientRequirementFn,
+} from "@/lib/api/client-requirements.functions";
+import { getSupabaseBrowserClient } from "@/lib/supabase/client";
 
 export const Route = createFileRoute("/client/requirements")({
   component: ClientRequirementsPage,
@@ -38,13 +43,36 @@ const emptyForm: ClientRequirementInput = {
 type FormErrors = Partial<Record<keyof ClientRequirementInput, string>>;
 
 function ClientRequirementsPage() {
-  const [requirements, setRequirements] = useState<ClientRequirementRecord[]>(() =>
-    readClientRequirements(),
-  );
+  const [requirements, setRequirements] = useState<ClientRequirementRecord[]>([]);
   const [form, setForm] = useState<ClientRequirementInput>(emptyForm);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [errors, setErrors] = useState<FormErrors>({});
   const [message, setMessage] = useState("");
+  const [ownerUserId, setOwnerUserId] = useState<string | null>(null);
+
+  useEffect(() => {
+    void loadRequirements();
+  }, []);
+
+  useEffect(() => {
+    let mounted = true;
+
+    const resolveOwner = async () => {
+      const supabase = getSupabaseBrowserClient();
+      if (!supabase) return;
+
+      const { data } = await supabase.auth.getUser();
+      if (mounted) {
+        setOwnerUserId(data.user?.id ?? null);
+      }
+    };
+
+    void resolveOwner();
+
+    return () => {
+      mounted = false;
+    };
+  }, []);
 
   function setField<K extends keyof ClientRequirementInput>(
     key: K,
@@ -68,18 +96,54 @@ function ClientRequirementsPage() {
     saveClientRequirements(next);
   }
 
+  async function loadRequirements() {
+    try {
+      const result = await listClientRequirementsFn({ data: {} });
+      if (result.configured) {
+        commit(result.requirements);
+        return;
+      }
+    } catch {
+      // Fall back to local cache.
+    }
+
+    setRequirements(readClientRequirements());
+  }
+
   function reset() {
     setForm(emptyForm);
     setEditingId(null);
     setErrors({});
   }
 
-  function onSubmit(e: FormEvent<HTMLFormElement>) {
+  async function onSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
 
     const nextErrors = validate(form);
     setErrors(nextErrors);
     if (Object.keys(nextErrors).length > 0) return;
+
+    try {
+      const result = await upsertClientRequirementFn({
+        data: {
+          id: editingId ?? undefined,
+          payload: form,
+          ownerUserId: ownerUserId ?? undefined,
+        },
+      });
+
+      if (result.configured && result.requirement) {
+        const next = editingId
+          ? requirements.map((r) => (r.id === result.requirement!.id ? result.requirement! : r))
+          : [result.requirement, ...requirements];
+        commit(next);
+        setMessage(editingId ? "Client requirement updated." : "Client requirement submitted.");
+        reset();
+        return;
+      }
+    } catch {
+      // Fall back to local flow.
+    }
 
     if (editingId) {
       const next = requirements.map((r) =>
@@ -128,7 +192,7 @@ function ClientRequirementsPage() {
         <h1 className="text-2xl font-heading font-bold text-[#0B3D91]">Client Requirements</h1>
 
         <div className="grid xl:grid-cols-[1.1fr_1fr] gap-6">
-          <form onSubmit={onSubmit} className="rounded-3xl border border-[#E5E7EB] bg-white p-6 space-y-4">
+          <form onSubmit={(e) => void onSubmit(e)} className="rounded-3xl border border-[#E5E7EB] bg-white p-6 space-y-4">
             <div className="grid md:grid-cols-2 gap-4">
               <Field label="Client Name" error={errors.clientName}><input className={inputClass(errors.clientName)} value={form.clientName} onChange={(e) => setField("clientName", e.target.value)} /></Field>
               <Field label="Service Needed" error={errors.serviceNeeded}><input className={inputClass(errors.serviceNeeded)} value={form.serviceNeeded} onChange={(e) => setField("serviceNeeded", e.target.value)} /></Field>

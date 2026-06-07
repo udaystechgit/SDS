@@ -233,9 +233,9 @@ function ContactPage() {
                 AI Data Center Staffing & Infrastructure Experts
               </p>
               <ul className="mt-6 space-y-4 text-sm">
-                <li className="flex items-start gap-3"><MapPin className="h-5 w-5 text-[color:var(--brand-bright)]" /> Chicago, Illinois</li>
-                <li className="flex items-start gap-3"><Mail className="h-5 w-5 text-[color:var(--brand-bright)]" /> hello@sdsconsulting.com</li>
-                <li className="flex items-start gap-3"><Phone className="h-5 w-5 text-[color:var(--brand-bright)]" /> +1 (312) 555-0182</li>
+                <li className="flex items-start gap-3"><MapPin className="h-5 w-5 text-[color:var(--brand-bright)]" /> Address: To be updated</li>
+                <li className="flex items-start gap-3"><Mail className="h-5 w-5 text-[color:var(--brand-bright)]" /> hr@sdsconsultingservice.com</li>
+                <li className="flex items-start gap-3"><Phone className="h-5 w-5 text-[color:var(--brand-bright)]" /> Contact number: To be updated</li>
                 <li className="flex items-start gap-3"><Clock className="h-5 w-5 text-[color:var(--brand-bright)]" /> 24/7 NOC Support</li>
               </ul>
             </div>

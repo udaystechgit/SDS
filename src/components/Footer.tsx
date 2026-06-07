@@ -35,9 +35,9 @@ export function Footer() {
         <div>
           <h4 className="font-heading font-semibold mb-4">Contact</h4>
           <ul className="space-y-3 text-sm text-white/70">
-            <li className="flex items-start gap-2"><MapPin className="h-4 w-4 mt-0.5 text-[color:var(--brand-bright)]" /> Chicago, Illinois</li>
-            <li className="flex items-start gap-2"><Mail className="h-4 w-4 mt-0.5 text-[color:var(--brand-bright)]" /> hello@sdsconsulting.com</li>
-            <li className="flex items-start gap-2"><Phone className="h-4 w-4 mt-0.5 text-[color:var(--brand-bright)]" /> +1 (312) 555-0182</li>
+            <li className="flex items-start gap-2"><MapPin className="h-4 w-4 mt-0.5 text-[color:var(--brand-bright)]" /> Address: To be updated</li>
+            <li className="flex items-start gap-2"><Mail className="h-4 w-4 mt-0.5 text-[color:var(--brand-bright)]" /> hr@sdsconsultingservice.com</li>
+            <li className="flex items-start gap-2"><Phone className="h-4 w-4 mt-0.5 text-[color:var(--brand-bright)]" /> Contact number: To be updated</li>
           </ul>
         </div>
       </div>

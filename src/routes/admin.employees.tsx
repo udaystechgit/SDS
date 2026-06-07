@@ -1,5 +1,5 @@
 import { createFileRoute, Link, Outlet, useLocation } from "@tanstack/react-router";
-import { useMemo, useState, type ReactNode } from "react";
+import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { Pencil, Trash2, ToggleRight, Users } from "lucide-react";
 import { AdminNav } from "@/components/AdminNav";
 import { InternalAccessBanner } from "@/components/InternalAccessBanner";
@@ -15,6 +15,11 @@ import {
   saveEmployees,
   updateEmployee,
 } from "@/lib/employees";
+import {
+  deleteEmployeeFn,
+  listEmployeesFn,
+  upsertEmployeeFn,
+} from "@/lib/api/employees.functions";
 
 export const Route = createFileRoute("/admin/employees")({
   component: EmployeeManagementPage,
@@ -55,7 +60,7 @@ const emptyForm: EmployeeInput = {
 
 function EmployeeManagementPage() {
   const location = useLocation();
-  const [employees, setEmployees] = useState<EmployeeRecord[]>(() => readEmployees());
+  const [employees, setEmployees] = useState<EmployeeRecord[]>([]);
   const [form, setForm] = useState<EmployeeInput>(emptyForm);
   const [editingEmployeeId, setEditingEmployeeId] = useState<string | null>(null);
   const [errors, setErrors] = useState<FormErrors>({});
@@ -65,6 +70,10 @@ function EmployeeManagementPage() {
   const [serviceDomainFilter, setServiceDomainFilter] = useState<"All" | ServiceDomain>("All");
   const [employeeTypeFilter, setEmployeeTypeFilter] = useState<"All" | EmployeeType>("All");
   const [pendingDeleteEmployee, setPendingDeleteEmployee] = useState<EmployeeRecord | null>(null);
+
+  useEffect(() => {
+    void loadEmployees();
+  }, []);
 
   const editingEmployee = useMemo(
     () => employees.find((emp) => emp.id === editingEmployeeId) ?? null,
@@ -121,13 +130,28 @@ function EmployeeManagementPage() {
     saveEmployees(nextEmployees);
   }
 
+  async function loadEmployees() {
+    try {
+      const result = await listEmployeesFn({ data: {} });
+      if (result.configured) {
+        setEmployees(result.employees);
+        saveEmployees(result.employees);
+        return;
+      }
+    } catch {
+      // Fall through to local cache.
+    }
+
+    setEmployees(readEmployees());
+  }
+
   function resetForm() {
     setForm(emptyForm);
     setErrors({});
     setEditingEmployeeId(null);
   }
 
-  function onSubmit(e: React.FormEvent<HTMLFormElement>) {
+  async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
 
     const validationErrors = validateForm(form);
@@ -135,17 +159,38 @@ function EmployeeManagementPage() {
 
     if (Object.keys(validationErrors).length > 0) return;
 
-    if (editingEmployee && editingEmployeeId) {
-      const nextEmployees = employees.map((emp) =>
-        emp.id === editingEmployeeId ? updateEmployee(emp, form) : emp,
-      );
-      commitEmployees(nextEmployees);
-      setMessage("Employee updated successfully.");
-      resetForm();
-      return;
+    try {
+      const result = await upsertEmployeeFn({
+        data: {
+          id: editingEmployeeId ?? undefined,
+          payload: {
+            ...form,
+            email: form.email.trim().toLowerCase(),
+          },
+        },
+      });
+
+      if (result.configured && result.employee) {
+        const nextEmployees = editingEmployeeId
+          ? employees.map((emp) => (emp.id === result.employee!.id ? result.employee! : emp))
+          : [result.employee, ...employees];
+        commitEmployees(nextEmployees);
+        setMessage(
+          editingEmployeeId
+            ? "Employee updated successfully."
+            : `Employee added successfully. UID: ${result.employee.uid}`,
+        );
+        resetForm();
+        return;
+      }
+    } catch {
+      // Fall back to local update flow.
     }
 
-    const created = createEmployee(form);
+    const created = createEmployee({
+      ...form,
+      email: form.email.trim().toLowerCase(),
+    });
     const nextEmployees = [created, ...employees];
     commitEmployees(nextEmployees);
     setMessage(`Employee added successfully. UID: ${created.uid}`);
@@ -177,20 +222,73 @@ function EmployeeManagementPage() {
     setMessage("");
   }
 
-  function onDelete(employeeId: string) {
-    const nextEmployees = employees.filter((emp) => emp.id !== employeeId);
-    commitEmployees(nextEmployees);
+  async function onDelete(employeeId: string) {
+    try {
+      const result = await deleteEmployeeFn({ data: { id: employeeId } });
+      if (result.configured) {
+        const nextEmployees = employees.filter((emp) => emp.id !== employeeId);
+        commitEmployees(nextEmployees);
+      } else {
+        const nextEmployees = employees.filter((emp) => emp.id !== employeeId);
+        commitEmployees(nextEmployees);
+      }
+    } catch {
+      const nextEmployees = employees.filter((emp) => emp.id !== employeeId);
+      commitEmployees(nextEmployees);
+    }
+
     if (editingEmployeeId === employeeId) resetForm();
     setPendingDeleteEmployee(null);
     setMessage("Employee deleted successfully.");
   }
 
-  function onToggleStatus(emp: EmployeeRecord) {
+  async function onToggleStatus(emp: EmployeeRecord) {
     const nextStatus: EmployeeStatus = emp.status === "Active" ? "Inactive" : "Active";
-    const nextEmployees = employees.map((item) =>
-      item.id === emp.id ? updateEmployee(item, { status: nextStatus }) : item,
-    );
-    commitEmployees(nextEmployees);
+
+    try {
+      const result = await upsertEmployeeFn({
+        data: {
+          id: emp.id,
+          payload: {
+            fullName: emp.fullName,
+            email: emp.email,
+            phone: emp.phone,
+            jobTitle: emp.jobTitle,
+            employeeType: emp.employeeType,
+            assignedClient: emp.assignedClient,
+            assignedProject: emp.assignedProject,
+            serviceDomain: emp.serviceDomain,
+            startDate: emp.startDate,
+            endDate: emp.endDate,
+            workMode: emp.workMode,
+            workLocation: emp.workLocation,
+            hourlyRate: emp.hourlyRate,
+            billingRate: emp.billingRate,
+            responsibilities: emp.responsibilities,
+            requiredSkills: emp.requiredSkills,
+            status: nextStatus,
+          },
+        },
+      });
+
+      if (result.configured && result.employee) {
+        const nextEmployees = employees.map((item) =>
+          item.id === result.employee!.id ? result.employee! : item,
+        );
+        commitEmployees(nextEmployees);
+      } else {
+        const nextEmployees = employees.map((item) =>
+          item.id === emp.id ? updateEmployee(item, { status: nextStatus }) : item,
+        );
+        commitEmployees(nextEmployees);
+      }
+    } catch {
+      const nextEmployees = employees.map((item) =>
+        item.id === emp.id ? updateEmployee(item, { status: nextStatus }) : item,
+      );
+      commitEmployees(nextEmployees);
+    }
+
     setMessage(`Employee status changed to ${nextStatus}.`);
   }
 
@@ -229,7 +327,7 @@ function EmployeeManagementPage() {
               ) : null}
             </div>
 
-            <form onSubmit={onSubmit} className="mt-6 grid gap-4">
+            <form onSubmit={(e) => void onSubmit(e)} className="mt-6 grid gap-4">
               <div className="grid md:grid-cols-2 gap-4">
                 <FormField label="Full Name" required error={errors.fullName}>
                   <input value={form.fullName} onChange={(e) => setField("fullName", e.target.value)} className={inputClass(errors.fullName)} />
@@ -404,7 +502,7 @@ function EmployeeManagementPage() {
                         <td className="py-3">
                           <div className="flex flex-wrap gap-2">
                             <ActionButton onClick={() => onEdit(emp)} icon={Pencil} label="Edit" />
-                            <ActionButton onClick={() => onToggleStatus(emp)} icon={ToggleRight} label={emp.status === "Active" ? "Deactivate" : "Activate"} />
+                            <ActionButton onClick={() => void onToggleStatus(emp)} icon={ToggleRight} label={emp.status === "Active" ? "Deactivate" : "Activate"} />
                             <ActionButton onClick={() => setPendingDeleteEmployee(emp)} icon={Trash2} label="Delete" tone="danger" />
                           </div>
                         </td>
@@ -435,7 +533,7 @@ function EmployeeManagementPage() {
               </button>
               <button
                 type="button"
-                onClick={() => onDelete(pendingDeleteEmployee.id)}
+                onClick={() => void onDelete(pendingDeleteEmployee.id)}
                 className="rounded-lg bg-red-600 px-3.5 py-2 text-sm font-semibold text-white hover:bg-red-700"
               >
                 Delete Employee
