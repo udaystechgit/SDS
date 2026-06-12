@@ -56,16 +56,31 @@ async function normalizeCatastrophicSsrResponse(
 }
 
 /**
- * IMPORTANT:
- * TanStack Start SSR requires Node.js runtime.
- * Do NOT use "edge" runtime here.
+ * TanStack Start SSR must run on Node.js runtime
  */
 export const config = {
   runtime: "nodejs",
 };
 
-export default async function handler(request: Request) {
+export default async function handler(req: any, res: any) {
   try {
+    const protocol =
+      req.headers?.["x-forwarded-proto"] ||
+      req.headers?.["X-Forwarded-Proto"] ||
+      "https";
+
+    const host =
+      req.headers?.host ||
+      req.headers?.Host ||
+      "localhost:3000";
+
+    const url = new URL(req.url || "/", `${protocol}://${host}`);
+
+    const request = new Request(url.toString(), {
+      method: req.method || "GET",
+      headers: req.headers,
+    });
+
     const serverEntry = await getServerEntry();
 
     const response = await serverEntry.fetch(
