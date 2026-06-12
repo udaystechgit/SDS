@@ -1,12 +1,8 @@
-import "../src/lib/error-capture";
-import { consumeLastCapturedError } from "../src/lib/error-capture";
-import { renderErrorPage } from "../src/lib/error-page";
-
 type ServerEntry = {
   fetch: (
     request: Request,
-    env: unknown,
-    ctx: unknown
+    env?: unknown,
+    ctx?: unknown
   ) => Promise<Response> | Response;
 };
 
@@ -22,47 +18,11 @@ async function getServerEntry(): Promise<ServerEntry> {
   return serverEntryPromise;
 }
 
-async function normalizeCatastrophicSsrResponse(
-  response: Response
-): Promise<Response> {
-  if (response.status < 500) return response;
-
-  const contentType = response.headers.get("content-type") ?? "";
-
-  if (!contentType.includes("application/json")) {
-    return response;
-  }
-
-  const body = await response.clone().text();
-
-  if (
-    !body.includes('"unhandled":true') ||
-    !body.includes('"message":"HTTPError"')
-  ) {
-    return response;
-  }
-
-  console.error(
-    consumeLastCapturedError() ??
-      new Error(`h3 swallowed SSR error: ${body}`)
-  );
-
-  return new Response(renderErrorPage(), {
-    status: 500,
-    headers: {
-      "content-type": "text/html; charset=utf-8",
-    },
-  });
-}
-
-/**
- * TanStack Start SSR must run on Node.js runtime
- */
 export const config = {
   runtime: "nodejs",
 };
 
-export default async function handler(req: any, res: any) {
+export default async function handler(req: any) {
   try {
     const protocol =
       req.headers?.["x-forwarded-proto"] ||
@@ -72,9 +32,12 @@ export default async function handler(req: any, res: any) {
     const host =
       req.headers?.host ||
       req.headers?.Host ||
-      "localhost:3000";
+      "localhost";
 
-    const url = new URL(req.url || "/", `${protocol}://${host}`);
+    const url = new URL(
+      req.url || "/",
+      `${protocol}://${host}`
+    );
 
     const request = new Request(url.toString(), {
       method: req.method || "GET",
@@ -83,21 +46,33 @@ export default async function handler(req: any, res: any) {
 
     const serverEntry = await getServerEntry();
 
-    const response = await serverEntry.fetch(
+    return await serverEntry.fetch(
       request,
       undefined,
       undefined
     );
-
-    return await normalizeCatastrophicSsrResponse(response);
   } catch (error) {
     console.error("SSR Handler Error:", error);
 
-    return new Response(renderErrorPage(), {
-      status: 500,
-      headers: {
-        "content-type": "text/html; charset=utf-8",
-      },
-    });
+    return new Response(
+      `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <title>SDS Consulting Service</title>
+      </head>
+      <body style="font-family: Arial; padding: 40px">
+        <h1>Application Error</h1>
+        <pre>${String(error)}</pre>
+      </body>
+      </html>
+      `,
+      {
+        status: 500,
+        headers: {
+          "content-type": "text/html; charset=utf-8",
+        },
+      }
+    );
   }
 }
