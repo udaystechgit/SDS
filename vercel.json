@@ -1,9 +1,5 @@
 {
-  "version": 2,
-  "builds": [
-    { "src": "package.json", "use": "@vercel/static-build" },
-    { "src": "api/index.ts", "use": "@vercel/node" }
-  ],
+  "version": 3,
   "routes": [
     { "handle": "filesystem" },
     { "src": "/api/(.*)", "dest": "/api/index.ts" },
