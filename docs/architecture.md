@@ -106,7 +106,6 @@ The `buildSeoMeta()` helper lives in `src/lib/seo.ts` and injects standard and O
 
 ## Error Handling
 
-- `src/lib/error-capture.ts` — catches unhandled errors
 - `src/lib/error-page.ts` — renders a friendly fallback UI
 - `src/lib/lovable-error-reporting.ts` — error reporting integration
 
