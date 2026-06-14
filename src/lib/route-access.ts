@@ -1,159 +1,114 @@
-export type RouteVisibility = "public" | "admin" | "employee" | "employer" | "client";
+import type { AppRole } from "@/lib/auth-roles";
 
-export type AppRole = "Admin" | "Employee" | "Employer" | "Client" | "Recruiter";
+export type RouteAccessMeta = {
+  public: boolean;
+  allowedRoles?: AppRole[];
+};
 
-export interface RouteAccessMeta {
-  path: string;
-  visibility: RouteVisibility;
-  futureAllowedRoles: AppRole[];
-  requiresAuthInPhase2: boolean;
+export const ROUTE_ACCESS_META: Record<string, RouteAccessMeta> = {
+  "/": {
+    public: true,
+  },
+  "/about": {
+    public: true,
+  },
+  "/services": {
+    public: true,
+  },
+  "/careers": {
+    public: true,
+  },
+  "/contact": {
+    public: true,
+  },
+  "/login": {
+    public: true,
+  },
+  "/admin": {
+    public: false,
+    allowedRoles: ["admin", "staff"],
+  },
+  "/admin/jobs": {
+    public: false,
+    allowedRoles: ["admin", "staff"],
+  },
+  "/admin/employees": {
+    public: false,
+    allowedRoles: ["admin", "staff"],
+  },
+  "/admin/timesheets": {
+    public: false,
+    allowedRoles: ["admin", "staff"],
+  },
+  "/admin/reports": {
+    public: false,
+    allowedRoles: ["admin", "staff"],
+  },
+  "/employer": {
+    public: false,
+    allowedRoles: ["employer"],
+  },
+  "/employer/jobs": {
+    public: false,
+    allowedRoles: ["employer"],
+  },
+  "/employer/candidates": {
+    public: false,
+    allowedRoles: ["employer"],
+  },
+  "/employer/timesheets": {
+    public: false,
+    allowedRoles: ["employer"],
+  },
+  "/employer/reports": {
+    public: false,
+    allowedRoles: ["employer"],
+  },
+  "/client": {
+    public: false,
+    allowedRoles: ["client"],
+  },
+  "/client/requirements": {
+    public: false,
+    allowedRoles: ["client"],
+  },
+  "/client/resources": {
+    public: false,
+    allowedRoles: ["client"],
+  },
+  "/client/timesheets": {
+    public: false,
+    allowedRoles: ["client"],
+  },
+  "/client/invoices": {
+    public: false,
+    allowedRoles: ["client"],
+  },
+  "/employee": {
+    public: false,
+    allowedRoles: ["employee"],
+  },
+};
+
+function normalizePathname(pathname: string) {
+  if (pathname === "/") {
+    return pathname;
+  }
+
+  return `/${pathname.replace(/^\/+|\/+$/g, "")}`;
 }
 
-// Phase 1: metadata-only planning structure. No runtime auth enforcement yet.
-export const ROUTE_ACCESS_META: RouteAccessMeta[] = [
-  {
-    path: "/",
-    visibility: "public",
-    futureAllowedRoles: ["Admin", "Employee", "Employer", "Client", "Recruiter"],
-    requiresAuthInPhase2: false,
-  },
-  {
-    path: "/about",
-    visibility: "public",
-    futureAllowedRoles: ["Admin", "Employee", "Employer", "Client", "Recruiter"],
-    requiresAuthInPhase2: false,
-  },
-  {
-    path: "/services",
-    visibility: "public",
-    futureAllowedRoles: ["Admin", "Employee", "Employer", "Client", "Recruiter"],
-    requiresAuthInPhase2: false,
-  },
-  {
-    path: "/careers",
-    visibility: "public",
-    futureAllowedRoles: ["Admin", "Employee", "Employer", "Client", "Recruiter"],
-    requiresAuthInPhase2: false,
-  },
-  {
-    path: "/contact",
-    visibility: "public",
-    futureAllowedRoles: ["Admin", "Employee", "Employer", "Client", "Recruiter"],
-    requiresAuthInPhase2: false,
-  },
-  {
-    path: "/employee",
-    visibility: "employee",
-    futureAllowedRoles: ["Employee"],
-    requiresAuthInPhase2: true,
-  },
-  {
-    path: "/admin",
-    visibility: "admin",
-    futureAllowedRoles: ["Admin", "Recruiter"],
-    requiresAuthInPhase2: true,
-  },
-  {
-    path: "/admin/jobs",
-    visibility: "admin",
-    futureAllowedRoles: ["Admin", "Recruiter"],
-    requiresAuthInPhase2: true,
-  },
-  {
-    path: "/admin/employees",
-    visibility: "admin",
-    futureAllowedRoles: ["Admin", "Recruiter"],
-    requiresAuthInPhase2: true,
-  },
-  {
-    path: "/admin/employees/:id",
-    visibility: "admin",
-    futureAllowedRoles: ["Admin", "Recruiter"],
-    requiresAuthInPhase2: true,
-  },
-  {
-    path: "/admin/timesheets",
-    visibility: "admin",
-    futureAllowedRoles: ["Admin", "Recruiter"],
-    requiresAuthInPhase2: true,
-  },
-  {
-    path: "/admin/reports",
-    visibility: "admin",
-    futureAllowedRoles: ["Admin", "Recruiter"],
-    requiresAuthInPhase2: true,
-  },
-  {
-    path: "/employer",
-    visibility: "employer",
-    futureAllowedRoles: ["Employer"],
-    requiresAuthInPhase2: true,
-  },
-  {
-    path: "/employer/jobs",
-    visibility: "employer",
-    futureAllowedRoles: ["Employer"],
-    requiresAuthInPhase2: true,
-  },
-  {
-    path: "/employer/candidates",
-    visibility: "employer",
-    futureAllowedRoles: ["Employer"],
-    requiresAuthInPhase2: true,
-  },
-  {
-    path: "/employer/timesheets",
-    visibility: "employer",
-    futureAllowedRoles: ["Employer"],
-    requiresAuthInPhase2: true,
-  },
-  {
-    path: "/employer/reports",
-    visibility: "employer",
-    futureAllowedRoles: ["Employer"],
-    requiresAuthInPhase2: true,
-  },
-  {
-    path: "/client",
-    visibility: "client",
-    futureAllowedRoles: ["Client"],
-    requiresAuthInPhase2: true,
-  },
-  {
-    path: "/client/requirements",
-    visibility: "client",
-    futureAllowedRoles: ["Client"],
-    requiresAuthInPhase2: true,
-  },
-  {
-    path: "/client/resources",
-    visibility: "client",
-    futureAllowedRoles: ["Client"],
-    requiresAuthInPhase2: true,
-  },
-  {
-    path: "/client/timesheets",
-    visibility: "client",
-    futureAllowedRoles: ["Client"],
-    requiresAuthInPhase2: true,
-  },
-  {
-    path: "/client/invoices",
-    visibility: "client",
-    futureAllowedRoles: ["Client"],
-    requiresAuthInPhase2: true,
-  },
-];
-
 export function getRouteAccessMeta(pathname: string): RouteAccessMeta | undefined {
-  return ROUTE_ACCESS_META.find((meta) => {
-    if (meta.path === pathname) return true;
+  const normalizedPathname = normalizePathname(pathname);
+  const exactMatch = ROUTE_ACCESS_META[normalizedPathname];
 
-    // Minimal dynamic support for planned patterns like /admin/employees/:id
-    if (meta.path.includes(":id") && pathname.startsWith(meta.path.replace(":id", ""))) {
-      return true;
-    }
+  if (exactMatch) {
+    return exactMatch;
+  }
 
-    return false;
-  });
+  if (normalizedPathname.startsWith("/admin/employees/")) {
+    return ROUTE_ACCESS_META["/admin/employees"];
+  }
+
+  return undefined;
 }
