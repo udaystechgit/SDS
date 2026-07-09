@@ -242,16 +242,11 @@ export function updateTimesheet(
   return normalizeTimesheetRecord(updated);
 }
 
-export function approveTimesheet(
-  current: TimesheetRecord,
-  approvedBy: string,
-): TimesheetRecord {
+export function approveTimesheet(current: TimesheetRecord, approvedBy: string): TimesheetRecord {
   return approveTimesheetByRole(current, "admin", approvedBy);
 }
 
-export function rejectTimesheet(
-  current: TimesheetRecord,
-): TimesheetRecord {
+export function rejectTimesheet(current: TimesheetRecord): TimesheetRecord {
   return rejectTimesheetByRole(current, "admin", "Admin");
 }
 

@@ -1,20 +1,14 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useEffect, useMemo, useState, type ReactNode } from "react";
+import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
 import { Pencil, Trash2, Eye, EyeOff, CircleX, BriefcaseBusiness } from "lucide-react";
-import {
-  type JobRequirement,
-  type JobRequirementInput,
-  createJobRequirement,
-  readJobRequirements,
-  saveJobRequirements,
-  updateJobRequirement,
-} from "@/lib/jobs";
+import { type JobRequirement, type JobRequirementInput } from "@/lib/jobs";
 import {
   deleteJobRequirementFn,
   listJobRequirementsFn,
   upsertJobRequirementFn,
 } from "@/lib/api/jobs.functions";
 import { InternalAccessBanner } from "@/components/InternalAccessBanner";
+import { useAuth } from "@/lib/auth-context";
 
 export const Route = createFileRoute("/admin/jobs")({
   component: AdminJobsPage,
@@ -55,6 +49,7 @@ const emptyForm: JobRequirementInput = {
 };
 
 function AdminJobsPage() {
+  const { session } = useAuth();
   const [jobs, setJobs] = useState<JobRequirement[]>([]);
   const [form, setForm] = useState<JobRequirementInput>(emptyForm);
   const [editingJobId, setEditingJobId] = useState<string | null>(null);
@@ -62,16 +57,11 @@ function AdminJobsPage() {
   const [message, setMessage] = useState<string>("");
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<(typeof statusFilterOptions)[number]>("All");
-  const [serviceDomainFilter, setServiceDomainFilter] = useState<
-    (typeof serviceDomainFilterOptions)[number]
-  >("All");
+  const [serviceDomainFilter, setServiceDomainFilter] =
+    useState<(typeof serviceDomainFilterOptions)[number]>("All");
   const [jobTypeFilter, setJobTypeFilter] = useState<(typeof jobTypeFilterOptions)[number]>("All");
   const [pendingDeleteJob, setPendingDeleteJob] = useState<JobRequirement | null>(null);
   const [showFloatingPostButton, setShowFloatingPostButton] = useState(true);
-
-  useEffect(() => {
-    void loadJobs();
-  }, []);
 
   const editingJob = useMemo(
     () => jobs.find((job) => job.id === editingJobId) ?? null,
@@ -124,15 +114,18 @@ function AdminJobsPage() {
     if (!values.serviceDomain.trim()) nextErrors.serviceDomain = "Service Domain is required.";
     if (!values.location.trim()) nextErrors.location = "Location is required.";
     if (!values.jobType.trim()) nextErrors.jobType = "Job Type is required.";
-    if (!values.shortDescription.trim()) nextErrors.shortDescription = "Short Description is required.";
+    if (!values.shortDescription.trim())
+      nextErrors.shortDescription = "Short Description is required.";
     if (values.shortDescription.trim() && values.shortDescription.trim().length < 30) {
       nextErrors.shortDescription = "Short Description must be at least 30 characters.";
     }
-    if (!values.responsibilities.trim()) nextErrors.responsibilities = "Responsibilities are required.";
+    if (!values.responsibilities.trim())
+      nextErrors.responsibilities = "Responsibilities are required.";
     if (values.responsibilities.trim() && values.responsibilities.trim().length < 40) {
       nextErrors.responsibilities = "Responsibilities must be at least 40 characters.";
     }
-    if (!values.requirementsSkills.trim()) nextErrors.requirementsSkills = "Requirements / Skills are required.";
+    if (!values.requirementsSkills.trim())
+      nextErrors.requirementsSkills = "Requirements / Skills are required.";
     if (values.requirementsSkills.trim() && values.requirementsSkills.trim().length < 30) {
       nextErrors.requirementsSkills = "Requirements / Skills must be at least 30 characters.";
     }
@@ -145,24 +138,32 @@ function AdminJobsPage() {
     return nextErrors;
   }
 
-  function commitJobs(nextJobs: JobRequirement[]) {
-    setJobs(nextJobs);
-    saveJobRequirements(nextJobs);
-  }
-
-  async function loadJobs() {
+  const loadJobs = useCallback(async () => {
     try {
-      const result = await listJobRequirementsFn({ data: { onlyPublished: false } });
+      if (!session?.access_token) {
+        throw new Error("Authentication is required.");
+      }
+
+      const result = await listJobRequirementsFn({
+        data: { onlyPublished: false },
+        headers: {
+          Authorization: `Bearer ${session.access_token}`,
+        },
+      });
       if (result.configured) {
         setJobs(result.jobs);
+        setMessage("");
         return;
       }
-    } catch {
-      // Fall through to local storage data if backend is not ready.
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : "Unable to load job requirements.");
+      return;
     }
+  }, [session?.access_token]);
 
-    setJobs(readJobRequirements());
-  }
+  useEffect(() => {
+    void loadJobs();
+  }, [loadJobs]);
 
   function resetForm() {
     setForm(emptyForm);
@@ -192,7 +193,9 @@ function AdminJobsPage() {
     setForm((prev) => ({
       ...prev,
       responsibilities: prev.responsibilities.trim() ? prev.responsibilities : responsibilities,
-      requirementsSkills: prev.requirementsSkills.trim() ? prev.requirementsSkills : requirementsSkills,
+      requirementsSkills: prev.requirementsSkills.trim()
+        ? prev.requirementsSkills
+        : requirementsSkills,
     }));
     setErrors((prev) => ({
       ...prev,
@@ -216,10 +219,17 @@ function AdminJobsPage() {
     };
 
     try {
+      if (!session?.access_token) {
+        throw new Error("Authentication is required.");
+      }
+
       const result = await upsertJobRequirementFn({
         data: {
           id: editingJobId ?? undefined,
           payload: normalizedForm,
+        },
+        headers: {
+          Authorization: `Bearer ${session.access_token}`,
         },
       });
 
@@ -228,29 +238,18 @@ function AdminJobsPage() {
           ? jobs.map((job) => (job.id === result.job!.id ? result.job! : job))
           : [result.job, ...jobs];
         setJobs(nextJobs);
-        setMessage(editingJobId ? "Requirement updated successfully." : "New requirement posted successfully.");
+        setMessage(
+          editingJobId
+            ? "Requirement updated successfully."
+            : "New requirement posted successfully.",
+        );
         resetForm();
         return;
       }
-    } catch {
-      // Fall back to local storage if Supabase is not available.
-    }
-
-    if (editingJob && editingJobId) {
-      const nextJobs = jobs.map((job) =>
-        job.id === editingJobId ? updateJobRequirement(job, normalizedForm) : job,
-      );
-      commitJobs(nextJobs);
-      setMessage("Requirement updated successfully.");
-      resetForm();
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : "Unable to save job requirement.");
       return;
     }
-
-    const created = createJobRequirement(normalizedForm);
-    const nextJobs = [created, ...jobs];
-    commitJobs(nextJobs);
-    setMessage("New requirement posted successfully.");
-    resetForm();
   }
 
   function onEdit(job: JobRequirement) {
@@ -276,16 +275,22 @@ function AdminJobsPage() {
 
   async function onDelete(jobId: string) {
     try {
-      const result = await deleteJobRequirementFn({ data: { id: jobId } });
+      if (!session?.access_token) {
+        throw new Error("Authentication is required.");
+      }
+
+      const result = await deleteJobRequirementFn({
+        data: { id: jobId },
+        headers: {
+          Authorization: `Bearer ${session.access_token}`,
+        },
+      });
       if (result.configured) {
         setJobs((prev) => prev.filter((job) => job.id !== jobId));
-      } else {
-        const nextJobs = jobs.filter((job) => job.id !== jobId);
-        commitJobs(nextJobs);
       }
-    } catch {
-      const nextJobs = jobs.filter((job) => job.id !== jobId);
-      commitJobs(nextJobs);
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : "Unable to delete job requirement.");
+      return;
     }
 
     if (editingJobId === jobId) resetForm();
@@ -297,6 +302,10 @@ function AdminJobsPage() {
     const nextStatus = job.status === "Published" ? "Draft" : "Published";
 
     try {
+      if (!session?.access_token) {
+        throw new Error("Authentication is required.");
+      }
+
       const result = await upsertJobRequirementFn({
         data: {
           id: job.id,
@@ -305,21 +314,17 @@ function AdminJobsPage() {
             status: nextStatus,
           },
         },
+        headers: {
+          Authorization: `Bearer ${session.access_token}`,
+        },
       });
 
       if (result.configured && result.job) {
         setJobs((prev) => prev.map((item) => (item.id === result.job!.id ? result.job! : item)));
-      } else {
-        const nextJobs = jobs.map((item) =>
-          item.id === job.id ? updateJobRequirement(item, { status: nextStatus }) : item,
-        );
-        commitJobs(nextJobs);
       }
-    } catch {
-      const nextJobs = jobs.map((item) =>
-        item.id === job.id ? updateJobRequirement(item, { status: nextStatus }) : item,
-      );
-      commitJobs(nextJobs);
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : "Unable to update job status.");
+      return;
     }
 
     setMessage(
@@ -331,6 +336,10 @@ function AdminJobsPage() {
 
   async function onClose(job: JobRequirement) {
     try {
+      if (!session?.access_token) {
+        throw new Error("Authentication is required.");
+      }
+
       const result = await upsertJobRequirementFn({
         data: {
           id: job.id,
@@ -339,21 +348,17 @@ function AdminJobsPage() {
             status: "Closed",
           },
         },
+        headers: {
+          Authorization: `Bearer ${session.access_token}`,
+        },
       });
 
       if (result.configured && result.job) {
         setJobs((prev) => prev.map((item) => (item.id === result.job!.id ? result.job! : item)));
-      } else {
-        const nextJobs = jobs.map((item) =>
-          item.id === job.id ? updateJobRequirement(item, { status: "Closed" }) : item,
-        );
-        commitJobs(nextJobs);
       }
-    } catch {
-      const nextJobs = jobs.map((item) =>
-        item.id === job.id ? updateJobRequirement(item, { status: "Closed" }) : item,
-      );
-      commitJobs(nextJobs);
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : "Unable to close job requirement.");
+      return;
     }
 
     setMessage("Requirement closed successfully.");
@@ -392,8 +397,12 @@ function AdminJobsPage() {
               <BriefcaseBusiness className="h-5 w-5" />
             </span>
             <div>
-              <h1 className="text-2xl font-heading font-bold text-[#0B3D91]">SDS Internal Job Requirements</h1>
-              <p className="text-sm text-slate-600">Manage and publish career requirements for the public careers page.</p>
+              <h1 className="text-2xl font-heading font-bold text-[#0B3D91]">
+                SDS Internal Job Requirements
+              </h1>
+              <p className="text-sm text-slate-600">
+                Manage and publish career requirements for the public careers page.
+              </p>
             </div>
           </div>
         </div>
@@ -409,7 +418,10 @@ function AdminJobsPage() {
         ) : null}
 
         <div className="grid xl:grid-cols-[1.1fr_1fr] gap-6">
-          <section id="post-requirements-section" className="rounded-3xl border border-[#E5E7EB] bg-white p-6 md:p-8 shadow-[0_24px_40px_-34px_rgba(11,61,145,0.6)]">
+          <section
+            id="post-requirements-section"
+            className="rounded-3xl border border-[#E5E7EB] bg-white p-6 md:p-8 shadow-[0_24px_40px_-34px_rgba(11,61,145,0.6)]"
+          >
             <div className="flex items-center justify-between gap-3">
               <h2 className="text-xl font-heading font-bold text-[#0B3D91]">
                 {editingJob ? "Edit Requirement" : "Post New Requirements"}
@@ -434,7 +446,8 @@ function AdminJobsPage() {
               </div>
             </div>
             <p className="mt-2 text-sm text-slate-600">
-              Create complete and publish-ready requirements with mandatory role details and a verified application email.
+              Create complete and publish-ready requirements with mandatory role details and a
+              verified application email.
             </p>
             <div className="mt-4">
               <div className="mb-1 flex items-center justify-between text-xs font-semibold text-slate-600">
@@ -451,16 +464,33 @@ function AdminJobsPage() {
 
             <form onSubmit={onSubmit} className="mt-6 grid gap-4">
               <FormField label="Job Title" required error={errors.jobTitle}>
-                <input value={form.jobTitle} onChange={(e) => setField("jobTitle", e.target.value)} className={inputClass(errors.jobTitle)} />
+                <input
+                  value={form.jobTitle}
+                  onChange={(e) => setField("jobTitle", e.target.value)}
+                  className={inputClass(errors.jobTitle)}
+                />
               </FormField>
 
               <div className="grid md:grid-cols-2 gap-4">
                 <FormField label="Department" required error={errors.department}>
-                  <input value={form.department} onChange={(e) => setField("department", e.target.value)} className={inputClass(errors.department)} />
+                  <input
+                    value={form.department}
+                    onChange={(e) => setField("department", e.target.value)}
+                    className={inputClass(errors.department)}
+                  />
                 </FormField>
 
                 <FormField label="Service Domain" required error={errors.serviceDomain}>
-                  <select value={form.serviceDomain} onChange={(e) => setField("serviceDomain", e.target.value as JobRequirementInput["serviceDomain"])} className={inputClass(errors.serviceDomain)}>
+                  <select
+                    value={form.serviceDomain}
+                    onChange={(e) =>
+                      setField(
+                        "serviceDomain",
+                        e.target.value as JobRequirementInput["serviceDomain"],
+                      )
+                    }
+                    className={inputClass(errors.serviceDomain)}
+                  >
                     {serviceDomains.map((domain) => (
                       <option key={domain}>{domain}</option>
                     ))}
@@ -470,17 +500,36 @@ function AdminJobsPage() {
 
               <div className="grid md:grid-cols-3 gap-4">
                 <FormField label="Location" required error={errors.location}>
-                  <input value={form.location} onChange={(e) => setField("location", e.target.value)} className={inputClass(errors.location)} />
+                  <input
+                    value={form.location}
+                    onChange={(e) => setField("location", e.target.value)}
+                    className={inputClass(errors.location)}
+                  />
                 </FormField>
                 <FormField label="Job Type" required error={errors.jobType}>
-                  <select value={form.jobType} onChange={(e) => setField("jobType", e.target.value as JobRequirementInput["jobType"])} className={inputClass(errors.jobType)}>
+                  <select
+                    value={form.jobType}
+                    onChange={(e) =>
+                      setField("jobType", e.target.value as JobRequirementInput["jobType"])
+                    }
+                    className={inputClass(errors.jobType)}
+                  >
                     {jobTypes.map((type) => (
                       <option key={type}>{type}</option>
                     ))}
                   </select>
                 </FormField>
                 <FormField label="Experience Level">
-                  <select value={form.experienceLevel} onChange={(e) => setField("experienceLevel", e.target.value as JobRequirementInput["experienceLevel"])} className={inputClass()}>
+                  <select
+                    value={form.experienceLevel}
+                    onChange={(e) =>
+                      setField(
+                        "experienceLevel",
+                        e.target.value as JobRequirementInput["experienceLevel"],
+                      )
+                    }
+                    className={inputClass()}
+                  >
                     {experienceLevels.map((level) => (
                       <option key={level}>{level}</option>
                     ))}
@@ -490,17 +539,34 @@ function AdminJobsPage() {
 
               <div className="grid md:grid-cols-3 gap-4">
                 <FormField label="Work Mode">
-                  <select value={form.workMode} onChange={(e) => setField("workMode", e.target.value as JobRequirementInput["workMode"])} className={inputClass()}>
+                  <select
+                    value={form.workMode}
+                    onChange={(e) =>
+                      setField("workMode", e.target.value as JobRequirementInput["workMode"])
+                    }
+                    className={inputClass()}
+                  >
                     {workModes.map((mode) => (
                       <option key={mode}>{mode}</option>
                     ))}
                   </select>
                 </FormField>
                 <FormField label="Salary Range">
-                  <input value={form.salaryRange} onChange={(e) => setField("salaryRange", e.target.value)} className={inputClass()} placeholder="e.g. $80,000 - $100,000" />
+                  <input
+                    value={form.salaryRange}
+                    onChange={(e) => setField("salaryRange", e.target.value)}
+                    className={inputClass()}
+                    placeholder="e.g. $80,000 - $100,000"
+                  />
                 </FormField>
                 <FormField label="Status" required error={errors.status}>
-                  <select value={form.status} onChange={(e) => setField("status", e.target.value as JobRequirementInput["status"])} className={inputClass(errors.status)}>
+                  <select
+                    value={form.status}
+                    onChange={(e) =>
+                      setField("status", e.target.value as JobRequirementInput["status"])
+                    }
+                    className={inputClass(errors.status)}
+                  >
                     {statuses.map((status) => (
                       <option key={status}>{status}</option>
                     ))}
@@ -509,26 +575,59 @@ function AdminJobsPage() {
               </div>
 
               <FormField label="Short Description" required error={errors.shortDescription}>
-                <textarea rows={3} value={form.shortDescription} onChange={(e) => setField("shortDescription", e.target.value)} className={inputClass(errors.shortDescription)} placeholder="Write a concise summary of the role, objective, and impact." />
-                <p className="mt-1 text-xs text-slate-500">Minimum 30 characters ({form.shortDescription.trim().length}/30)</p>
+                <textarea
+                  rows={3}
+                  value={form.shortDescription}
+                  onChange={(e) => setField("shortDescription", e.target.value)}
+                  className={inputClass(errors.shortDescription)}
+                  placeholder="Write a concise summary of the role, objective, and impact."
+                />
+                <p className="mt-1 text-xs text-slate-500">
+                  Minimum 30 characters ({form.shortDescription.trim().length}/30)
+                </p>
               </FormField>
 
               <FormField label="Responsibilities" required error={errors.responsibilities}>
-                <textarea rows={4} value={form.responsibilities} onChange={(e) => setField("responsibilities", e.target.value)} className={inputClass(errors.responsibilities)} placeholder="List key day-to-day responsibilities for this role." />
-                <p className="mt-1 text-xs text-slate-500">Minimum 40 characters ({form.responsibilities.trim().length}/40)</p>
+                <textarea
+                  rows={4}
+                  value={form.responsibilities}
+                  onChange={(e) => setField("responsibilities", e.target.value)}
+                  className={inputClass(errors.responsibilities)}
+                  placeholder="List key day-to-day responsibilities for this role."
+                />
+                <p className="mt-1 text-xs text-slate-500">
+                  Minimum 40 characters ({form.responsibilities.trim().length}/40)
+                </p>
               </FormField>
 
               <FormField label="Requirements / Skills" required error={errors.requirementsSkills}>
-                <textarea rows={4} value={form.requirementsSkills} onChange={(e) => setField("requirementsSkills", e.target.value)} className={inputClass(errors.requirementsSkills)} placeholder="Include required skills, certifications, and qualifications." />
-                <p className="mt-1 text-xs text-slate-500">Minimum 30 characters ({form.requirementsSkills.trim().length}/30)</p>
+                <textarea
+                  rows={4}
+                  value={form.requirementsSkills}
+                  onChange={(e) => setField("requirementsSkills", e.target.value)}
+                  className={inputClass(errors.requirementsSkills)}
+                  placeholder="Include required skills, certifications, and qualifications."
+                />
+                <p className="mt-1 text-xs text-slate-500">
+                  Minimum 30 characters ({form.requirementsSkills.trim().length}/30)
+                </p>
               </FormField>
 
               <FormField label="Application Email" required error={errors.applicationEmail}>
-                <input type="email" value={form.applicationEmail} onChange={(e) => setField("applicationEmail", e.target.value)} className={inputClass(errors.applicationEmail)} placeholder="hr@sdsconsultingservice.com" />
+                <input
+                  type="email"
+                  value={form.applicationEmail}
+                  onChange={(e) => setField("applicationEmail", e.target.value)}
+                  className={inputClass(errors.applicationEmail)}
+                  placeholder="hr@sdsconsultingservice.com"
+                />
               </FormField>
 
               <div className="pt-2">
-                <button type="submit" className="inline-flex items-center justify-center rounded-xl bg-[linear-gradient(135deg,#0B3D91_0%,#1DA1F2_100%)] px-5 py-2.5 text-sm font-semibold text-white shadow-[0_16px_28px_-16px_rgba(11,61,145,0.8)] hover:opacity-95">
+                <button
+                  type="submit"
+                  className="inline-flex items-center justify-center rounded-xl bg-[linear-gradient(135deg,#0B3D91_0%,#1DA1F2_100%)] px-5 py-2.5 text-sm font-semibold text-white shadow-[0_16px_28px_-16px_rgba(11,61,145,0.8)] hover:opacity-95"
+                >
                   {editingJob ? "Update Requirement" : "Post Requirement"}
                 </button>
               </div>
@@ -538,8 +637,12 @@ function AdminJobsPage() {
           <section className="rounded-3xl border border-[#E5E7EB] bg-white p-6 md:p-8 shadow-[0_24px_40px_-34px_rgba(11,61,145,0.6)]">
             <div className="flex flex-wrap items-start justify-between gap-3">
               <div>
-                <h2 className="text-xl font-heading font-bold text-[#0B3D91]">Posted Requirements</h2>
-                <p className="mt-1 text-sm text-slate-600">Use actions to edit, publish/unpublish, close, or delete requirements.</p>
+                <h2 className="text-xl font-heading font-bold text-[#0B3D91]">
+                  Posted Requirements
+                </h2>
+                <p className="mt-1 text-sm text-slate-600">
+                  Use actions to edit, publish/unpublish, close, or delete requirements.
+                </p>
               </div>
               <button
                 type="button"
@@ -559,7 +662,9 @@ function AdminJobsPage() {
               />
               <select
                 value={statusFilter}
-                onChange={(e) => setStatusFilter(e.target.value as (typeof statusFilterOptions)[number])}
+                onChange={(e) =>
+                  setStatusFilter(e.target.value as (typeof statusFilterOptions)[number])
+                }
                 className={inputClass()}
               >
                 {statusFilterOptions.map((status) => (
@@ -581,7 +686,9 @@ function AdminJobsPage() {
               </select>
               <select
                 value={jobTypeFilter}
-                onChange={(e) => setJobTypeFilter(e.target.value as (typeof jobTypeFilterOptions)[number])}
+                onChange={(e) =>
+                  setJobTypeFilter(e.target.value as (typeof jobTypeFilterOptions)[number])
+                }
                 className={inputClass()}
               >
                 {jobTypeFilterOptions.map((type) => (
@@ -627,12 +734,8 @@ function AdminJobsPage() {
                         <td className="py-3 pr-3">
                           <StatusBadge status={job.status} />
                         </td>
-                        <td className="py-3 pr-3 text-slate-700">
-                          {formatDate(job.postedDate)}
-                        </td>
-                        <td className="py-3 pr-3 text-slate-700">
-                          {formatDate(job.updatedAt)}
-                        </td>
+                        <td className="py-3 pr-3 text-slate-700">{formatDate(job.postedDate)}</td>
+                        <td className="py-3 pr-3 text-slate-700">{formatDate(job.updatedAt)}</td>
                         <td className="py-3">
                           <div className="flex flex-wrap gap-2">
                             <ActionButton onClick={() => onEdit(job)} icon={Pencil} label="Edit" />
@@ -641,7 +744,11 @@ function AdminJobsPage() {
                               icon={job.status === "Published" ? EyeOff : Eye}
                               label={job.status === "Published" ? "Unpublish" : "Publish"}
                             />
-                            <ActionButton onClick={() => void onClose(job)} icon={CircleX} label="Close" />
+                            <ActionButton
+                              onClick={() => void onClose(job)}
+                              icon={CircleX}
+                              label="Close"
+                            />
                             <ActionButton
                               onClick={() => setPendingDeleteJob(job)}
                               icon={Trash2}
@@ -663,7 +770,9 @@ function AdminJobsPage() {
       {pendingDeleteJob ? (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#0B3D91]/35 p-4">
           <div className="w-full max-w-md rounded-2xl border border-[#E5E7EB] bg-white p-6 shadow-[0_40px_60px_-30px_rgba(11,61,145,0.8)]">
-            <h3 className="text-lg font-heading font-bold text-[#0B3D91]">Delete Job Requirement</h3>
+            <h3 className="text-lg font-heading font-bold text-[#0B3D91]">
+              Delete Job Requirement
+            </h3>
             <p className="mt-3 text-sm text-slate-700">
               Are you sure you want to delete this job requirement? This action cannot be undone.
             </p>
@@ -745,7 +854,13 @@ function StatusBadge({ status }: { status: JobRequirement["status"] }) {
     Closed: "bg-red-100 text-red-700 border border-red-200",
   };
 
-  return <span className={`inline-flex rounded-full px-2.5 py-1 text-xs font-semibold ${styles[status]}`}>{status}</span>;
+  return (
+    <span
+      className={`inline-flex rounded-full px-2.5 py-1 text-xs font-semibold ${styles[status]}`}
+    >
+      {status}
+    </span>
+  );
 }
 
 function ActionButton({

@@ -41,8 +41,12 @@ function Index() {
                   <Icon className="h-5 w-5" />
                 </span>
                 <div>
-                  <div className="font-heading text-2xl font-bold text-[color:var(--brand-deep)]">{s.value}</div>
-                  <div className="text-xs uppercase tracking-wider text-muted-foreground">{s.label}</div>
+                  <div className="font-heading text-2xl font-bold text-[color:var(--brand-deep)]">
+                    {s.value}
+                  </div>
+                  <div className="text-xs uppercase tracking-wider text-muted-foreground">
+                    {s.label}
+                  </div>
                 </div>
               </div>
             );
@@ -64,14 +68,16 @@ function Index() {
             />
           </div>
           <div>
-            <div className="text-xs font-bold uppercase tracking-wider text-[color:var(--brand-bright)]">Why SDS</div>
+            <div className="text-xs font-bold uppercase tracking-wider text-[color:var(--brand-bright)]">
+              Why SDS
+            </div>
             <h2 className="mt-3 text-3xl md:text-5xl font-heading font-bold">
               Enterprise quality, <span className="text-gradient-brand">delivered fast</span>.
             </h2>
             <p className="mt-5 text-muted-foreground leading-relaxed">
               SDS Consulting Services brings the rigor of top-tier consulting firms to the
-              specialized world of AI data center operations. We blend skilled manpower
-              with deep technical expertise to keep your infrastructure performing at peak.
+              specialized world of AI data center operations. We blend skilled manpower with deep
+              technical expertise to keep your infrastructure performing at peak.
             </p>
             <ul className="mt-8 grid sm:grid-cols-2 gap-4 text-sm">
               {[

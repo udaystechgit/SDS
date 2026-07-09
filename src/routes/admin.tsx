@@ -34,16 +34,51 @@ function AdminDashboard() {
 
   const stats = useMemo(
     () => [
-      { label: "Total Job Requirements", value: jobs.length, icon: Briefcase, color: "bg-[#1DA1F2]" },
-      { label: "Published Jobs", value: publishedJobs.length, icon: Briefcase, color: "bg-green-600" },
-      { label: "Draft Jobs", value: jobs.filter((j) => j.status === "Draft").length, icon: Briefcase, color: "bg-slate-500" },
-      { label: "Closed Jobs", value: jobs.filter((j) => j.status === "Closed").length, icon: Briefcase, color: "bg-red-600" },
+      {
+        label: "Total Job Requirements",
+        value: jobs.length,
+        icon: Briefcase,
+        color: "bg-[#1DA1F2]",
+      },
+      {
+        label: "Published Jobs",
+        value: publishedJobs.length,
+        icon: Briefcase,
+        color: "bg-green-600",
+      },
+      {
+        label: "Draft Jobs",
+        value: jobs.filter((j) => j.status === "Draft").length,
+        icon: Briefcase,
+        color: "bg-slate-500",
+      },
+      {
+        label: "Closed Jobs",
+        value: jobs.filter((j) => j.status === "Closed").length,
+        icon: Briefcase,
+        color: "bg-red-600",
+      },
       { label: "Total Employees", value: employees.length, icon: Users, color: "bg-[#0B3D91]" },
       { label: "Total Employers", value: totalEmployers, icon: Users, color: "bg-indigo-600" },
       { label: "Total Clients", value: totalClients, icon: Users, color: "bg-cyan-600" },
-      { label: "Active Employees", value: activeEmployees.length, icon: Users, color: "bg-emerald-600" },
-      { label: "Pending Timesheets", value: pendingTimesheets.length, icon: Clock, color: "bg-orange-500" },
-      { label: "Approved Timesheets", value: approvedTimesheets.length, icon: Clock, color: "bg-blue-600" },
+      {
+        label: "Active Employees",
+        value: activeEmployees.length,
+        icon: Users,
+        color: "bg-emerald-600",
+      },
+      {
+        label: "Pending Timesheets",
+        value: pendingTimesheets.length,
+        icon: Clock,
+        color: "bg-orange-500",
+      },
+      {
+        label: "Approved Timesheets",
+        value: approvedTimesheets.length,
+        icon: Clock,
+        color: "bg-blue-600",
+      },
     ],
     [
       jobs,
@@ -91,13 +126,18 @@ function AdminDashboard() {
           {stats.map((stat) => {
             const Icon = stat.icon;
             return (
-              <div key={stat.label} className="rounded-2xl border border-[#E5E7EB] bg-white p-5 shadow-sm hover:shadow-md transition-shadow">
+              <div
+                key={stat.label}
+                className="rounded-2xl border border-[#E5E7EB] bg-white p-5 shadow-sm hover:shadow-md transition-shadow"
+              >
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-sm text-slate-600">{stat.label}</p>
                     <p className="mt-2 text-3xl font-bold text-[#0B3D91]">{stat.value}</p>
                   </div>
-                  <span className={`flex h-12 w-12 items-center justify-center rounded-xl ${stat.color} text-white`}>
+                  <span
+                    className={`flex h-12 w-12 items-center justify-center rounded-xl ${stat.color} text-white`}
+                  >
                     <Icon className="h-6 w-6" />
                   </span>
                 </div>
@@ -123,19 +163,27 @@ function AdminDashboard() {
                 <p className="text-sm text-slate-500">No employees added yet.</p>
               ) : (
                 employees.slice(0, 5).map((emp) => (
-                  <div key={emp.id} className="flex items-center justify-between rounded-lg border border-[#E5E7EB] p-3">
+                  <div
+                    key={emp.id}
+                    className="flex items-center justify-between rounded-lg border border-[#E5E7EB] p-3"
+                  >
                     <div>
                       <p className="font-medium text-slate-900">{emp.fullName}</p>
                       <p className="text-xs text-slate-500">{emp.uid}</p>
                     </div>
-                    <span className={`inline-block px-2 py-1 rounded text-xs font-semibold ${emp.status === "Active" ? "bg-green-100 text-green-700" : "bg-slate-100 text-slate-700"}`}>
+                    <span
+                      className={`inline-block px-2 py-1 rounded text-xs font-semibold ${emp.status === "Active" ? "bg-green-100 text-green-700" : "bg-slate-100 text-slate-700"}`}
+                    >
                       {emp.status}
                     </span>
                   </div>
                 ))
               )}
             </div>
-            <Link to="/admin/employees" className="mt-4 inline-flex items-center gap-2 text-sm font-semibold text-[#1DA1F2] hover:gap-3 transition-all">
+            <Link
+              to="/admin/employees"
+              className="mt-4 inline-flex items-center gap-2 text-sm font-semibold text-[#1DA1F2] hover:gap-3 transition-all"
+            >
               View all <ArrowRight className="h-4 w-4" />
             </Link>
           </section>
@@ -147,7 +195,10 @@ function AdminDashboard() {
                 <p className="text-sm text-slate-500">No pending timesheets.</p>
               ) : (
                 pendingTimesheets.slice(0, 5).map((ts) => (
-                  <div key={ts.id} className="flex items-center justify-between rounded-lg border border-[#E5E7EB] p-3">
+                  <div
+                    key={ts.id}
+                    className="flex items-center justify-between rounded-lg border border-[#E5E7EB] p-3"
+                  >
                     <div>
                       <p className="font-medium text-slate-900">{ts.employeeName}</p>
                       <p className="text-xs text-slate-500">{ts.totalHours} hours</p>
@@ -159,7 +210,10 @@ function AdminDashboard() {
                 ))
               )}
             </div>
-            <Link to="/admin/timesheets" className="mt-4 inline-flex items-center gap-2 text-sm font-semibold text-[#1DA1F2] hover:gap-3 transition-all">
+            <Link
+              to="/admin/timesheets"
+              className="mt-4 inline-flex items-center gap-2 text-sm font-semibold text-[#1DA1F2] hover:gap-3 transition-all"
+            >
               Review all <ArrowRight className="h-4 w-4" />
             </Link>
           </section>
@@ -169,7 +223,15 @@ function AdminDashboard() {
   );
 }
 
-function Card({ href, label, icon: Icon }: { href: string; label: string; icon: React.ComponentType<{ className?: string }> }) {
+function Card({
+  href,
+  label,
+  icon: Icon,
+}: {
+  href: string;
+  label: string;
+  icon: React.ComponentType<{ className?: string }>;
+}) {
   return (
     <Link
       to={href}

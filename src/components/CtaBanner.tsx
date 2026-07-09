@@ -14,15 +14,21 @@ export function CtaBanner() {
                 Scaling an AI data center? Let's talk.
               </h3>
               <p className="mt-3 text-white/85 max-w-xl">
-                From 10 technicians to 500. From a single rack to a full hall. SDS is
-                your trusted Chicago-based partner for AI infrastructure at every scale.
+                From 10 technicians to 500. From a single rack to a full hall. SDS is your trusted
+                Wisconsin-based partner for AI infrastructure at every scale.
               </p>
             </div>
             <div className="flex md:justify-end gap-3">
-              <Link to="/contact" className="inline-flex items-center gap-2 px-6 py-3 rounded-full bg-white text-[color:var(--brand-deep)] font-semibold hover:bg-white/90">
+              <Link
+                to="/contact"
+                className="inline-flex items-center gap-2 px-6 py-3 rounded-full bg-white text-[color:var(--brand-deep)] font-semibold hover:bg-white/90"
+              >
                 Get a Quote <ArrowRight className="h-4 w-4" />
               </Link>
-              <Link to="/services" className="inline-flex items-center gap-2 px-6 py-3 rounded-full bg-white/10 border border-white/30 text-white font-semibold hover:bg-white/20">
+              <Link
+                to="/services"
+                className="inline-flex items-center gap-2 px-6 py-3 rounded-full bg-white/10 border border-white/30 text-white font-semibold hover:bg-white/20"
+              >
                 Our Services
               </Link>
             </div>

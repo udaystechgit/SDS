@@ -6,6 +6,7 @@ import {
   createJobRequirement,
   updateJobRequirement,
 } from "@/lib/jobs";
+import { requireAuthenticatedRole, requireServiceRoleClient } from "@/lib/api/auth.server";
 import { getSupabaseServerClient } from "@/lib/supabase/server.server";
 import type { JobRequirementRow } from "@/lib/supabase/database.types";
 
@@ -102,6 +103,10 @@ function toModel(row: JobRequirementRow): JobRequirement {
 export const listJobRequirementsFn = createServerFn({ method: "POST" })
   .inputValidator(listInputSchema)
   .handler(async ({ data }) => {
+    if (!data.onlyPublished) {
+      await requireAuthenticatedRole(["admin"]);
+    }
+
     const client = getSupabaseServerClient();
     if (!client) {
       return { configured: false as const, jobs: [] as JobRequirement[] };
@@ -118,7 +123,7 @@ export const listJobRequirementsFn = createServerFn({ method: "POST" })
 
     const { data: rows, error } = await query;
     if (error) {
-      throw new Error(`Failed to list job requirements: ${error.message}`);
+      throw new Error("Failed to list job requirements.");
     }
 
     return {
@@ -130,10 +135,8 @@ export const listJobRequirementsFn = createServerFn({ method: "POST" })
 export const upsertJobRequirementFn = createServerFn({ method: "POST" })
   .inputValidator(upsertInputSchema)
   .handler(async ({ data }) => {
-    const client = getSupabaseServerClient();
-    if (!client) {
-      return { configured: false as const, job: null as JobRequirement | null };
-    }
+    await requireAuthenticatedRole(["admin"]);
+    const client = requireServiceRoleClient();
 
     if (!data.id) {
       const createdModel = createJobRequirement(data.payload);
@@ -147,7 +150,7 @@ export const upsertJobRequirementFn = createServerFn({ method: "POST" })
         .single();
 
       if (error) {
-        throw new Error(`Failed to create job requirement: ${error.message}`);
+        throw new Error("Failed to create job requirement.");
       }
 
       return {
@@ -163,10 +166,13 @@ export const upsertJobRequirementFn = createServerFn({ method: "POST" })
       .single();
 
     if (currentError) {
-      throw new Error(`Failed to load existing requirement: ${currentError.message}`);
+      throw new Error("Failed to load existing requirement.");
     }
 
-    const updatedModel = updateJobRequirement(toModel(currentRow as JobRequirementRow), data.payload);
+    const updatedModel = updateJobRequirement(
+      toModel(currentRow as JobRequirementRow),
+      data.payload,
+    );
     const { data: updatedRow, error } = await client
       .from("job_requirements")
       .update(toRow(updatedModel, updatedModel.postedDate || null))
@@ -175,7 +181,7 @@ export const upsertJobRequirementFn = createServerFn({ method: "POST" })
       .single();
 
     if (error) {
-      throw new Error(`Failed to update job requirement: ${error.message}`);
+      throw new Error("Failed to update job requirement.");
     }
 
     return {
@@ -187,18 +193,13 @@ export const upsertJobRequirementFn = createServerFn({ method: "POST" })
 export const deleteJobRequirementFn = createServerFn({ method: "POST" })
   .inputValidator(deleteInputSchema)
   .handler(async ({ data }) => {
-    const client = getSupabaseServerClient();
-    if (!client) {
-      return { configured: false as const };
-    }
+    await requireAuthenticatedRole(["admin"]);
+    const client = requireServiceRoleClient();
 
-    const { error } = await client
-      .from("job_requirements")
-      .delete()
-      .eq("id", data.id);
+    const { error } = await client.from("job_requirements").delete().eq("id", data.id);
 
     if (error) {
-      throw new Error(`Failed to delete job requirement: ${error.message}`);
+      throw new Error("Failed to delete job requirement.");
     }
 
     return { configured: true as const };

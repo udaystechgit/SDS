@@ -1,4 +1,5 @@
 import { createServerFn } from "@tanstack/react-start";
+import { setResponseStatus } from "@tanstack/react-start/server";
 import { z } from "zod";
 import {
   type ClientRequirementInput,
@@ -6,7 +7,7 @@ import {
   createClientRequirement,
   updateClientRequirement,
 } from "@/lib/client-requirements";
-import { getSupabaseServerClient } from "@/lib/supabase/server.server";
+import { requireAuthenticatedRole, requireServiceRoleClient } from "@/lib/api/auth.server";
 import type { ClientRequirementRow } from "@/lib/supabase/database.types";
 
 const inputSchema = z.object({
@@ -42,7 +43,6 @@ const listSchema = z.object({});
 const upsertSchema = z.object({
   id: z.string().uuid().optional(),
   payload: inputSchema,
-  ownerUserId: z.string().uuid().optional(),
 });
 
 function toModel(row: ClientRequirementRow): ClientRequirementRecord {
@@ -90,18 +90,22 @@ function toRow(input: ClientRequirementInput, ownerUserId?: string | null) {
 export const listClientRequirementsFn = createServerFn({ method: "POST" })
   .inputValidator(listSchema)
   .handler(async () => {
-    const client = getSupabaseServerClient();
-    if (!client) {
-      return { configured: false as const, requirements: [] as ClientRequirementRecord[] };
-    }
+    const auth = await requireAuthenticatedRole(["admin", "client"]);
+    const client = requireServiceRoleClient();
 
-    const { data, error } = await client
+    let query = client
       .from("client_requirements")
       .select("*")
       .order("updated_at", { ascending: false });
 
+    if (auth.role === "client") {
+      query = query.eq("client_user_id", auth.userId);
+    }
+
+    const { data, error } = await query;
+
     if (error) {
-      throw new Error(`Failed to list client requirements: ${error.message}`);
+      throw new Error("Failed to list client requirements.");
     }
 
     return {
@@ -113,13 +117,13 @@ export const listClientRequirementsFn = createServerFn({ method: "POST" })
 export const upsertClientRequirementFn = createServerFn({ method: "POST" })
   .inputValidator(upsertSchema)
   .handler(async ({ data }) => {
-    const client = getSupabaseServerClient();
-    if (!client) {
-      return { configured: false as const, requirement: null as ClientRequirementRecord | null };
-    }
+    const auth = await requireAuthenticatedRole(["admin", "client"]);
+    const client = requireServiceRoleClient();
+    const ownerUserId = auth.role === "client" ? auth.userId : null;
 
     if (!data.id) {
-      if (!data.ownerUserId) {
+      if (!ownerUserId) {
+        setResponseStatus(400);
         throw new Error("Authenticated client user is required to create client requirements.");
       }
 
@@ -128,13 +132,13 @@ export const upsertClientRequirementFn = createServerFn({ method: "POST" })
         .from("client_requirements")
         .insert({
           id: created.id,
-          ...toRow(data.payload, data.ownerUserId),
+          ...toRow(data.payload, ownerUserId),
         })
         .select("*")
         .single();
 
       if (error) {
-        throw new Error(`Failed to create client requirement: ${error.message}`);
+        throw new Error("Failed to create client requirement.");
       }
 
       return { configured: true as const, requirement: toModel(inserted as ClientRequirementRow) };
@@ -147,26 +151,32 @@ export const upsertClientRequirementFn = createServerFn({ method: "POST" })
       .single();
 
     if (currentError) {
-      throw new Error(`Failed to load client requirement: ${currentError.message}`);
+      throw new Error("Failed to load client requirement.");
+    }
+
+    if (!currentRow) {
+      setResponseStatus(404);
+      throw new Error("Client requirement was not found.");
     }
 
     const currentModel = toModel(currentRow as ClientRequirementRow);
     const updated = updateClientRequirement(currentModel, data.payload);
     const currentOwnerUserId = (currentRow as ClientRequirementRow).client_user_id;
 
-    if (!currentOwnerUserId && !data.ownerUserId) {
-      throw new Error("Authenticated client user is required to update client requirements.");
+    if (auth.role === "client" && currentOwnerUserId !== auth.userId) {
+      setResponseStatus(403);
+      throw new Error("You do not have permission to update this client requirement.");
     }
 
     const { data: updatedRow, error } = await client
       .from("client_requirements")
-      .update(toRow(updated, currentOwnerUserId ?? data.ownerUserId ?? null))
+      .update(toRow(updated, currentOwnerUserId))
       .eq("id", data.id)
       .select("*")
       .single();
 
     if (error) {
-      throw new Error(`Failed to update client requirement: ${error.message}`);
+      throw new Error("Failed to update client requirement.");
     }
 
     return { configured: true as const, requirement: toModel(updatedRow as ClientRequirementRow) };

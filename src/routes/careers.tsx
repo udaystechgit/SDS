@@ -3,13 +3,9 @@ import { useEffect, useMemo, useState } from "react";
 import { SiteShell } from "@/components/SiteShell";
 import { PageHero } from "@/components/PageHero";
 import { Briefcase, Heart, GraduationCap, Globe, ArrowRight } from "lucide-react";
-import logo from "@/assets/sds-logo.png";
+import logo from "@/assets/brand/sds-logo-transparent.png";
 import { buildSeoMeta } from "@/lib/seo";
-import {
-  getPublishedJobRequirements,
-  readJobRequirements,
-  type JobRequirement,
-} from "@/lib/jobs";
+import { getPublishedJobRequirements, readJobRequirements, type JobRequirement } from "@/lib/jobs";
 import { listJobRequirementsFn } from "@/lib/api/jobs.functions";
 
 export const Route = createFileRoute("/careers")({
@@ -25,10 +21,26 @@ export const Route = createFileRoute("/careers")({
 });
 
 const whys = [
-  { icon: Briefcase, t: "Meaningful Work", d: "Power the infrastructure behind the world's AI breakthroughs." },
-  { icon: GraduationCap, t: "Growth & Certs", d: "Funded training: NVIDIA, BICSI, Cisco, AWS, and more." },
-  { icon: Heart, t: "Care First", d: "Comprehensive benefits, mental health, and PTO that respects you." },
-  { icon: Globe, t: "Global Footprint", d: "Work with hyperscalers and Fortune 500 operators worldwide." },
+  {
+    icon: Briefcase,
+    t: "Meaningful Work",
+    d: "Power the infrastructure behind the world's AI breakthroughs.",
+  },
+  {
+    icon: GraduationCap,
+    t: "Growth & Certs",
+    d: "Funded training: NVIDIA, BICSI, Cisco, AWS, and more.",
+  },
+  {
+    icon: Heart,
+    t: "Care First",
+    d: "Comprehensive benefits, mental health, and PTO that respects you.",
+  },
+  {
+    icon: Globe,
+    t: "Global Footprint",
+    d: "Work with hyperscalers and Fortune 500 operators worldwide.",
+  },
 ];
 
 function CareersPage() {
@@ -71,9 +83,7 @@ function CareersPage() {
   }, []);
 
   const roleOptions =
-    publishedRoles.length > 0
-      ? publishedRoles.map((r) => r.jobTitle)
-      : ["General Application"];
+    publishedRoles.length > 0 ? publishedRoles.map((r) => r.jobTitle) : ["General Application"];
 
   const departmentOptions = useMemo(
     () => ["All Departments", ...new Set(publishedRoles.map((r) => r.department))],
@@ -96,8 +106,7 @@ function CareersPage() {
         departmentFilter === "All Departments" || role.department === departmentFilter;
       const matchesLocation =
         locationFilter === "All Locations" || role.location === locationFilter;
-      const matchesJobType =
-        jobTypeFilter === "All Job Types" || role.jobType === jobTypeFilter;
+      const matchesJobType = jobTypeFilter === "All Job Types" || role.jobType === jobTypeFilter;
       return matchesDepartment && matchesLocation && matchesJobType;
     });
   }, [publishedRoles, departmentFilter, locationFilter, jobTypeFilter]);
@@ -107,7 +116,7 @@ function CareersPage() {
       <PageHero
         eyebrow="Careers"
         title="Build Your Career in AI Infrastructure"
-        description="Join a Chicago-headquartered team deploying the data centers that power tomorrow's AI."
+        description="Join a Green Bay-headquartered team deploying the data centers that power tomorrow's AI."
         image="https://images.unsplash.com/photo-1521737711867-e3b97375f902?auto=format&fit=crop&w=1920&q=80"
         showLogo
       />
@@ -120,7 +129,10 @@ function CareersPage() {
             {whys.map((w) => {
               const Icon = w.icon;
               return (
-                <div key={w.t} className="rounded-2xl p-6 bg-card border border-border hover:shadow-brand transition-shadow">
+                <div
+                  key={w.t}
+                  className="rounded-2xl p-6 bg-card border border-border hover:shadow-brand transition-shadow"
+                >
                   <span className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-brand text-white">
                     <Icon className="h-5 w-5" />
                   </span>
@@ -172,7 +184,8 @@ function CareersPage() {
 
           {publishedRoles.length === 0 ? (
             <div className="mt-10 rounded-2xl bg-card border border-border p-6 text-muted-foreground">
-              No open roles right now. Please send us your profile and we&apos;ll contact you when a matching opportunity is available.
+              No open roles right now. Please send us your profile and we&apos;ll contact you when a
+              matching opportunity is available.
             </div>
           ) : filteredPublishedRoles.length === 0 ? (
             <div className="mt-10 rounded-2xl bg-card border border-border p-6 text-muted-foreground">
@@ -181,12 +194,20 @@ function CareersPage() {
           ) : (
             <div className="mt-10 grid gap-4">
               {filteredPublishedRoles.map((r) => (
-                <div key={r.id} className="group flex items-center justify-between gap-4 rounded-2xl bg-card border border-border p-5 hover:shadow-brand transition-shadow">
+                <div
+                  key={r.id}
+                  className="group flex items-center justify-between gap-4 rounded-2xl bg-card border border-border p-5 hover:shadow-brand transition-shadow"
+                >
                   <div>
                     <div className="font-heading font-bold">{r.jobTitle}</div>
-                    <div className="text-xs text-muted-foreground uppercase tracking-wider">{r.location} • {r.jobType}</div>
+                    <div className="text-xs text-muted-foreground uppercase tracking-wider">
+                      {r.location} • {r.jobType}
+                    </div>
                   </div>
-                  <a href="#apply" className="inline-flex items-center gap-2 text-sm font-semibold text-[color:var(--brand-deep)] group-hover:gap-3 transition-all">
+                  <a
+                    href="#apply"
+                    className="inline-flex items-center gap-2 text-sm font-semibold text-[color:var(--brand-deep)] group-hover:gap-3 transition-all"
+                  >
                     Apply <ArrowRight className="h-4 w-4" />
                   </a>
                 </div>
@@ -200,15 +221,23 @@ function CareersPage() {
       <section className="py-20">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 grid lg:grid-cols-2 gap-12 items-center">
           <div className="img-hover-zoom rounded-3xl overflow-hidden shadow-brand">
-            <img src="https://images.unsplash.com/photo-1522071820081-009f0129c71c?auto=format&fit=crop&w=1400&q=80" alt="SDS team culture" className="h-full w-full object-cover" loading="lazy" />
+            <img
+              src="https://images.unsplash.com/photo-1522071820081-009f0129c71c?auto=format&fit=crop&w=1400&q=80"
+              alt="SDS team culture"
+              className="h-full w-full object-cover"
+              loading="lazy"
+            />
           </div>
           <div>
-            <div className="text-xs font-bold uppercase tracking-wider text-[color:var(--brand-bright)]">Our Culture</div>
-            <h2 className="mt-3 text-3xl md:text-5xl font-heading font-bold">A team that has each other's back.</h2>
+            <div className="text-xs font-bold uppercase tracking-wider text-[color:var(--brand-bright)]">
+              Our Culture
+            </div>
+            <h2 className="mt-3 text-3xl md:text-5xl font-heading font-bold">
+              A team that has each other's back.
+            </h2>
             <p className="mt-5 text-muted-foreground leading-relaxed">
-              We work at the edge of AI infrastructure — and we take care of each other
-              while we do it. Expect mentorship, real ownership, and the support to grow
-              your career fast.
+              We work at the edge of AI infrastructure — and we take care of each other while we do
+              it. Expect mentorship, real ownership, and the support to grow your career fast.
             </p>
           </div>
         </div>
@@ -219,7 +248,7 @@ function CareersPage() {
         <div className="mx-auto max-w-3xl px-4 sm:px-6 lg:px-8">
           <div className="rounded-3xl bg-card border border-border p-8 md:p-10 shadow-brand">
             <div className="flex items-center gap-4 mb-6">
-              <img src={logo} alt="SDS" className="h-12 w-auto" />
+              <img src={logo} alt="SDS Consulting Services" className="h-16 w-20 object-contain" />
               <div>
                 <h2 className="text-2xl font-heading font-bold">Apply to SDS</h2>
                 <p className="text-sm text-muted-foreground">We review every application.</p>
@@ -231,7 +260,10 @@ function CareersPage() {
               </div>
             ) : (
               <form
-                onSubmit={(e) => { e.preventDefault(); setSent(true); }}
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  setSent(true);
+                }}
                 className="grid gap-4"
               >
                 <div className="grid sm:grid-cols-2 gap-4">
@@ -242,8 +274,13 @@ function CareersPage() {
                   <Field label="Phone" name="phone" />
                   <div>
                     <label className="block text-sm font-medium mb-1.5">Role of interest</label>
-                    <select name="role" className="w-full rounded-lg border border-input bg-background px-3 py-2.5 text-sm">
-                      {roleOptions.map((title) => <option key={title}>{title}</option>)}
+                    <select
+                      name="role"
+                      className="w-full rounded-lg border border-input bg-background px-3 py-2.5 text-sm"
+                    >
+                      {roleOptions.map((title) => (
+                        <option key={title}>{title}</option>
+                      ))}
                     </select>
                   </div>
                 </div>
@@ -258,14 +295,22 @@ function CareersPage() {
                     accept=".pdf,.doc,.docx"
                     className="w-full rounded-lg border border-input bg-background px-3 py-2.5 text-sm file:mr-4 file:rounded-md file:border-0 file:bg-[color:var(--brand-bright)]/15 file:px-3 file:py-1.5 file:text-[color:var(--brand-deep)] file:font-medium"
                   />
-                  <p className="mt-1 text-xs text-muted-foreground">Accepted formats: PDF, DOC, DOCX</p>
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    Accepted formats: PDF, DOC, DOCX
+                  </p>
                 </div>
                 <div>
                   <label className="block text-sm font-medium mb-1.5">Tell us about yourself</label>
-                  <textarea name="message" rows={5} className="w-full rounded-lg border border-input bg-background px-3 py-2.5 text-sm" />
+                  <textarea
+                    name="message"
+                    rows={5}
+                    className="w-full rounded-lg border border-input bg-background px-3 py-2.5 text-sm"
+                  />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium mb-1.5">Why are you interested in this role?</label>
+                  <label className="block text-sm font-medium mb-1.5">
+                    Why are you interested in this role?
+                  </label>
                   <textarea
                     name="roleInterest"
                     rows={4}
@@ -273,7 +318,10 @@ function CareersPage() {
                     placeholder="Share what excites you about this role and how your experience aligns."
                   />
                 </div>
-                <button type="submit" className="mt-2 inline-flex justify-center items-center gap-2 px-6 py-3 rounded-full bg-gradient-brand text-white font-semibold shadow-brand hover:opacity-95">
+                <button
+                  type="submit"
+                  className="mt-2 inline-flex justify-center items-center gap-2 px-6 py-3 rounded-full bg-gradient-brand text-white font-semibold shadow-brand hover:opacity-95"
+                >
                   Submit application <ArrowRight className="h-4 w-4" />
                 </button>
               </form>
@@ -285,11 +333,29 @@ function CareersPage() {
   );
 }
 
-function Field({ label, name, type = "text", required }: { label: string; name: string; type?: string; required?: boolean }) {
+function Field({
+  label,
+  name,
+  type = "text",
+  required,
+}: {
+  label: string;
+  name: string;
+  type?: string;
+  required?: boolean;
+}) {
   return (
     <div>
-      <label className="block text-sm font-medium mb-1.5">{label}{required && <span className="text-destructive"> *</span>}</label>
-      <input name={name} type={type} required={required} className="w-full rounded-lg border border-input bg-background px-3 py-2.5 text-sm" />
+      <label className="block text-sm font-medium mb-1.5">
+        {label}
+        {required && <span className="text-destructive"> *</span>}
+      </label>
+      <input
+        name={name}
+        type={type}
+        required={required}
+        className="w-full rounded-lg border border-input bg-background px-3 py-2.5 text-sm"
+      />
     </div>
   );
 }

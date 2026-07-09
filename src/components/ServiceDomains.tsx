@@ -1,16 +1,39 @@
 import { Link } from "@tanstack/react-router";
-import { ArrowRight, Cpu, Cloud, Network, Activity, Wrench, Cable, Snowflake, ServerCog, HardHat } from "lucide-react";
+import {
+  ArrowRight,
+  Cpu,
+  Cloud,
+  Network,
+  Activity,
+  Wrench,
+  Cable,
+  Snowflake,
+  ServerCog,
+  HardHat,
+} from "lucide-react";
 
 const itServices = [
-  { icon: Cpu, title: "AI Infrastructure Deployment", text: "GPU clusters, model serving, MLOps pipelines." },
+  {
+    icon: Cpu,
+    title: "AI Infrastructure Deployment",
+    text: "GPU clusters, model serving, MLOps pipelines.",
+  },
   { icon: Cloud, title: "Cloud & DevOps", text: "AWS, Azure, GCP. CI/CD, Kubernetes, IaC." },
   { icon: Network, title: "Network Systems", text: "Spine-leaf design, SDN, secure connectivity." },
-  { icon: Activity, title: "24/7 Monitoring & NOC", text: "Proactive alerts, incident response, uptime SLAs." },
+  {
+    icon: Activity,
+    title: "24/7 Monitoring & NOC",
+    text: "Proactive alerts, incident response, uptime SLAs.",
+  },
 ];
 
 const dcServices = [
   { icon: HardHat, title: "Data Center Staffing", text: "Vetted technicians ready on-site." },
-  { icon: ServerCog, title: "Rack & Stack", text: "Server install, cabling, labeling, commissioning." },
+  {
+    icon: ServerCog,
+    title: "Rack & Stack",
+    text: "Server install, cabling, labeling, commissioning.",
+  },
   { icon: Cable, title: "Network Cabling", text: "Copper, fiber, structured cabling at scale." },
   { icon: Snowflake, title: "Power & Cooling", text: "PDU, UPS, CRAC, hot/cold aisle expertise." },
   { icon: Wrench, title: "Remote Hands", text: "On-demand smart hands, 24/7 globally." },
@@ -28,8 +51,8 @@ export function ServiceDomains() {
             Our <span className="text-gradient-brand">Service Domains</span>
           </h2>
           <p className="mt-4 text-muted-foreground">
-            From AI infrastructure to physical rack & stack — one partner for every layer
-            of the modern data center.
+            From AI infrastructure to physical rack & stack — one partner for every layer of the
+            modern data center.
           </p>
         </div>
 
@@ -49,9 +72,7 @@ export function ServiceDomains() {
               <div className="text-xs font-bold uppercase tracking-wider text-[color:var(--brand-bright)]">
                 Category A
               </div>
-              <h3 className="mt-2 text-2xl md:text-3xl font-heading font-bold">
-                IT & AI Services
-              </h3>
+              <h3 className="mt-2 text-2xl md:text-3xl font-heading font-bold">IT & AI Services</h3>
               <ul className="mt-6 grid sm:grid-cols-2 gap-4">
                 {itServices.map((s) => {
                   const Icon = s.icon;

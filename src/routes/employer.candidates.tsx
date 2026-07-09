@@ -24,10 +24,10 @@ function EmployerCandidatesPage() {
           employee.status === "Active"
             ? "Active"
             : employee.status === "Completed"
-            ? "Selected"
-            : employee.status === "On Hold"
-            ? "Shortlisted"
-            : "Submitted",
+              ? "Selected"
+              : employee.status === "On Hold"
+                ? "Shortlisted"
+                : "Submitted",
       })),
     [employees],
   );
@@ -38,7 +38,9 @@ function EmployerCandidatesPage() {
       <section className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-8 space-y-6">
         <PortalBanner extraMessage="Employer access protection will be added in backend phase." />
         <div>
-          <h1 className="text-2xl font-heading font-bold text-[#0B3D91]">Employer Candidates / Resources</h1>
+          <h1 className="text-2xl font-heading font-bold text-[#0B3D91]">
+            Employer Candidates / Resources
+          </h1>
           <p className="mt-1 text-slate-600">Review candidate and resource pipeline status.</p>
         </div>
 
@@ -58,18 +60,26 @@ function EmployerCandidatesPage() {
             <tbody>
               {rows.length === 0 ? (
                 <tr>
-                  <td colSpan={7} className="py-8 text-center text-slate-500">No candidates/resources found.</td>
+                  <td colSpan={7} className="py-8 text-center text-slate-500">
+                    No candidates/resources found.
+                  </td>
                 </tr>
               ) : (
                 rows.map((row) => (
                   <tr key={row.uid} className="border-b border-[#E5E7EB]/70">
-                    <td className="py-3 font-mono text-xs font-semibold text-[#1DA1F2]">{row.uid}</td>
+                    <td className="py-3 font-mono text-xs font-semibold text-[#1DA1F2]">
+                      {row.uid}
+                    </td>
                     <td className="py-3 font-medium text-slate-900">{row.name}</td>
                     <td className="py-3">{row.role}</td>
                     <td className="py-3">{row.skills}</td>
                     <td className="py-3">{row.level}</td>
                     <td className="py-3">{row.project}</td>
-                    <td className="py-3"><span className="rounded-full bg-[#1DA1F2]/10 px-2 py-1 text-xs text-[#0B3D91]">{row.status}</span></td>
+                    <td className="py-3">
+                      <span className="rounded-full bg-[#1DA1F2]/10 px-2 py-1 text-xs text-[#0B3D91]">
+                        {row.status}
+                      </span>
+                    </td>
                   </tr>
                 ))
               )}

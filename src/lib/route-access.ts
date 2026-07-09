@@ -24,6 +24,10 @@ export const ROUTE_ACCESS_META: Record<string, RouteAccessMeta> = {
   "/login": {
     public: true,
   },
+  "/notifications": {
+    public: false,
+    allowedRoles: ["admin", "staff", "employer", "client", "employee"],
+  },
   "/admin": {
     public: false,
     allowedRoles: ["admin", "staff"],
@@ -37,6 +41,14 @@ export const ROUTE_ACCESS_META: Record<string, RouteAccessMeta> = {
     allowedRoles: ["admin", "staff"],
   },
   "/admin/timesheets": {
+    public: false,
+    allowedRoles: ["admin", "staff"],
+  },
+  "/admin/leave": {
+    public: false,
+    allowedRoles: ["admin", "staff"],
+  },
+  "/admin/activity": {
     public: false,
     allowedRoles: ["admin", "staff"],
   },
@@ -88,6 +100,22 @@ export const ROUTE_ACCESS_META: Record<string, RouteAccessMeta> = {
     public: false,
     allowedRoles: ["employee"],
   },
+  "/employee/profile": {
+    public: false,
+    allowedRoles: ["employee"],
+  },
+  "/employee/timesheets": {
+    public: false,
+    allowedRoles: ["employee"],
+  },
+  "/employee/leave": {
+    public: false,
+    allowedRoles: ["employee"],
+  },
+  "/employee/documents": {
+    public: false,
+    allowedRoles: ["employee"],
+  },
 };
 
 function normalizePathname(pathname: string) {
@@ -108,6 +136,14 @@ export function getRouteAccessMeta(pathname: string): RouteAccessMeta | undefine
 
   if (normalizedPathname.startsWith("/admin/employees/")) {
     return ROUTE_ACCESS_META["/admin/employees"];
+  }
+
+  if (normalizedPathname.startsWith("/admin/timesheets/")) {
+    return ROUTE_ACCESS_META["/admin/timesheets"];
+  }
+
+  if (normalizedPathname.startsWith("/admin/leave/")) {
+    return ROUTE_ACCESS_META["/admin/leave"];
   }
 
   return undefined;

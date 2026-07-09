@@ -1,7 +1,7 @@
 import { Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { Menu, X } from "lucide-react";
-import logo from "@/assets/sds-logo.png";
+import { Menu, Phone, X } from "lucide-react";
+import logo from "@/assets/brand/sds-logo-transparent.png";
 
 const links = [
   { to: "/", label: "Home" },
@@ -29,11 +29,15 @@ export function Navbar() {
       }`}
     >
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 flex items-center justify-between h-16 md:h-20">
-        <Link to="/" className="flex items-center gap-3 group">
-          <img src={logo} alt="SDS Consulting Services" className="h-10 md:h-12 w-auto" />
+        <Link to="/" className="flex min-w-0 items-center gap-3 group">
+          <img
+            src={logo}
+            alt="SDS Consulting Services"
+            className="h-12 w-14 object-contain sm:h-14 sm:w-16 md:h-16 md:w-[4.5rem]"
+          />
           <div className="hidden sm:flex flex-col leading-tight">
             <span className="font-heading font-bold text-base md:text-lg text-[color:var(--brand-deep)]">
-              SDS Consulting
+              SDS Consulting Services
             </span>
             <span className="text-[10px] md:text-xs text-muted-foreground tracking-wide uppercase">
               AI Data Center Experts
@@ -53,9 +57,16 @@ export function Navbar() {
               {l.label}
             </Link>
           ))}
+          <a
+            href="tel:+12622709899"
+            className="ml-3 inline-flex items-center gap-2 px-4 py-2.5 rounded-full text-sm font-semibold text-[color:var(--brand-deep)] border border-border bg-white/80 hover:bg-secondary transition-colors"
+          >
+            <Phone className="h-4 w-4" />
+            +1 262-270-9899
+          </a>
           <Link
             to="/contact"
-            className="ml-3 inline-flex items-center px-5 py-2.5 rounded-full text-sm font-semibold text-white bg-gradient-brand shadow-brand hover:opacity-95"
+            className="inline-flex items-center px-5 py-2.5 rounded-full text-sm font-semibold text-white bg-gradient-brand shadow-brand hover:opacity-95"
           >
             Get a Quote
           </Link>
@@ -92,6 +103,14 @@ export function Navbar() {
             >
               Get a Quote
             </Link>
+            <a
+              href="tel:+12622709899"
+              onClick={() => setOpen(false)}
+              className="mt-2 inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-full text-sm font-semibold text-[color:var(--brand-deep)] border border-border bg-white"
+            >
+              <Phone className="h-4 w-4" />
+              +1 262-270-9899
+            </a>
           </div>
         </div>
       )}

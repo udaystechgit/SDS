@@ -20,6 +20,7 @@ export type JobRequirementRow = {
 
 export type EmployeeRow = {
   id: string;
+  auth_user_id: string | null;
   uid: string;
   full_name: string;
   email: string;
@@ -40,6 +41,98 @@ export type EmployeeRow = {
   status: string;
   created_at: string;
   updated_at: string;
+};
+
+export type TimesheetStatus = "draft" | "submitted" | "approved" | "rejected";
+
+export type TimesheetRow = {
+  id: string;
+  employee_id: string;
+  week_start: string;
+  week_end: string;
+  status: TimesheetStatus;
+  submitted_at: string | null;
+  approved_by: string | null;
+  approved_at: string | null;
+  rejected_by: string | null;
+  rejected_at: string | null;
+  rejection_reason: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
+export type TimesheetEntryRow = {
+  id: string;
+  timesheet_id: string;
+  work_date: string;
+  project_name: string;
+  task_description: string;
+  hours: number;
+  created_at: string;
+  updated_at: string;
+};
+
+export type LeaveStatus = "draft" | "submitted" | "approved" | "rejected" | "cancelled";
+
+export type LeaveType = "annual" | "sick" | "personal" | "unpaid" | "bereavement" | "other";
+
+export type LeaveRequestRow = {
+  id: string;
+  employee_id: string;
+  leave_type: LeaveType;
+  start_date: string;
+  end_date: string;
+  total_days: number;
+  reason: string | null;
+  status: LeaveStatus;
+  approved_by: string | null;
+  approved_at: string | null;
+  rejected_by: string | null;
+  rejected_at: string | null;
+  rejection_reason: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
+export type AuditEntityType = "timesheet" | "leave_request" | "employee";
+
+export type AuditAction =
+  | "created"
+  | "updated"
+  | "submitted"
+  | "approved"
+  | "rejected"
+  | "cancelled"
+  | "linked_auth_user";
+
+export type AuditLogRow = {
+  id: string;
+  entity_type: AuditEntityType;
+  entity_id: string;
+  action: AuditAction;
+  actor_user_id: string | null;
+  metadata: Record<string, unknown>;
+  created_at: string;
+};
+
+export type NotificationType =
+  | "timesheet_approved"
+  | "timesheet_rejected"
+  | "leave_approved"
+  | "leave_rejected";
+
+export type NotificationEntityType = "timesheet" | "leave_request";
+
+export type NotificationRow = {
+  id: string;
+  user_id: string;
+  type: NotificationType;
+  title: string;
+  message: string;
+  entity_type: NotificationEntityType | null;
+  entity_id: string | null;
+  is_read: boolean;
+  created_at: string;
 };
 
 export type ClientRequirementRow = {
@@ -83,4 +176,16 @@ export type EmployerRequirementRow = {
   status: string;
   created_at: string;
   updated_at: string;
+};
+
+export type ContactSubmissionRow = {
+  id: string;
+  name: string;
+  email: string;
+  company: string;
+  phone: string | null;
+  service: string;
+  message: string;
+  status: "new" | "reviewed" | "closed";
+  created_at: string;
 };

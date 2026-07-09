@@ -8,41 +8,41 @@ TanStack Router uses **file-based routing**. Every `.tsx` file in `src/routes/` 
 
 ## File → URL Mapping Rules
 
-| File | URL |
-|---|---|
-| `index.tsx` | `/` |
-| `about.tsx` | `/about` |
-| `services.tsx` | `/services` |
-| `careers.tsx` | `/careers` |
-| `contact.tsx` | `/contact` |
-| `admin.tsx` | `/admin` (layout) |
-| `admin.timesheets.tsx` | `/admin/timesheets` |
-| `admin.employees.tsx` | `/admin/employees` |
-| `admin.employees.$id.tsx` | `/admin/employees/:id` |
-| `admin.jobs.tsx` | `/admin/jobs` |
-| `admin.reports.tsx` | `/admin/reports` |
-| `client.tsx` | `/client` (layout) |
-| `client.timesheets.tsx` | `/client/timesheets` |
-| `client.invoices.tsx` | `/client/invoices` |
-| `client.resources.tsx` | `/client/resources` |
-| `client.requirements.tsx` | `/client/requirements` |
-| `employer.tsx` | `/employer` (layout) |
-| `employer.timesheets.tsx` | `/employer/timesheets` |
-| `employer.candidates.tsx` | `/employer/candidates` |
-| `employer.jobs.tsx` | `/employer/jobs` |
-| `employer.reports.tsx` | `/employer/reports` |
-| `employee.tsx` | `/employee` |
-| `__root.tsx` | App shell (wraps every route) |
+| File                      | URL                           |
+| ------------------------- | ----------------------------- |
+| `index.tsx`               | `/`                           |
+| `about.tsx`               | `/about`                      |
+| `services.tsx`            | `/services`                   |
+| `careers.tsx`             | `/careers`                    |
+| `contact.tsx`             | `/contact`                    |
+| `admin.tsx`               | `/admin` (layout)             |
+| `admin.timesheets.tsx`    | `/admin/timesheets`           |
+| `admin.employees.tsx`     | `/admin/employees`            |
+| `admin.employees.$id.tsx` | `/admin/employees/:id`        |
+| `admin.jobs.tsx`          | `/admin/jobs`                 |
+| `admin.reports.tsx`       | `/admin/reports`              |
+| `client.tsx`              | `/client` (layout)            |
+| `client.timesheets.tsx`   | `/client/timesheets`          |
+| `client.invoices.tsx`     | `/client/invoices`            |
+| `client.resources.tsx`    | `/client/resources`           |
+| `client.requirements.tsx` | `/client/requirements`        |
+| `employer.tsx`            | `/employer` (layout)          |
+| `employer.timesheets.tsx` | `/employer/timesheets`        |
+| `employer.candidates.tsx` | `/employer/candidates`        |
+| `employer.jobs.tsx`       | `/employer/jobs`              |
+| `employer.reports.tsx`    | `/employer/reports`           |
+| `employee.tsx`            | `/employee`                   |
+| `__root.tsx`              | App shell (wraps every route) |
 
 ---
 
 ## Special Files
 
-| File | Purpose |
-|---|---|
-| `__root.tsx` | Global layout — renders `<Outlet />` for all routes. Contains `<Navbar>`, `<Footer>`, toast providers, and global `<head>` tags. |
-| `_layout.tsx` (pattern) | Nested layout — renders children via `<Outlet />` without appearing in the URL. |
-| `$param.tsx` (pattern) | Dynamic segment — param available via `useParams()`. |
+| File                    | Purpose                                                                                                                          |
+| ----------------------- | -------------------------------------------------------------------------------------------------------------------------------- |
+| `__root.tsx`            | Global layout — renders `<Outlet />` for all routes. Contains `<Navbar>`, `<Footer>`, toast providers, and global `<head>` tags. |
+| `_layout.tsx` (pattern) | Nested layout — renders children via `<Outlet />` without appearing in the URL.                                                  |
+| `$param.tsx` (pattern)  | Dynamic segment — param available via `useParams()`.                                                                             |
 
 ---
 

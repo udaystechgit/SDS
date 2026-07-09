@@ -1,20 +1,17 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useEffect, useMemo, useState, type FormEvent, type ReactNode } from "react";
+import { useCallback, useEffect, useMemo, useState, type FormEvent, type ReactNode } from "react";
 import { InternalPortalNav } from "@/components/InternalPortalNav";
 import { PortalBanner } from "@/components/PortalBanner";
 import {
   type EmployerRequirementRecord,
   type EmployerRequirementInput,
-  createEmployerRequirement,
-  readEmployerRequirements,
   saveEmployerRequirements,
-  updateEmployerRequirement,
 } from "@/lib/employer-requirements";
 import {
   listEmployerRequirementsFn,
   upsertEmployerRequirementFn,
 } from "@/lib/api/employer-requirements.functions";
-import { getSupabaseBrowserClient } from "@/lib/supabase/client";
+import { useAuth } from "@/lib/auth-context";
 
 export const Route = createFileRoute("/employer/jobs")({
   component: EmployerJobsPage,
@@ -43,36 +40,40 @@ const emptyForm: EmployerRequirementInput = {
 type FormErrors = Partial<Record<keyof EmployerRequirementInput, string>>;
 
 function EmployerJobsPage() {
+  const { session } = useAuth();
   const [requirements, setRequirements] = useState<EmployerRequirementRecord[]>([]);
   const [form, setForm] = useState<EmployerRequirementInput>(emptyForm);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [errors, setErrors] = useState<FormErrors>({});
   const [message, setMessage] = useState("");
-  const [ownerUserId, setOwnerUserId] = useState<string | null>(null);
 
-  useEffect(() => {
-    void loadRequirements();
+  const commit = useCallback((next: EmployerRequirementRecord[]) => {
+    setRequirements(next);
+    saveEmployerRequirements(next);
   }, []);
 
-  useEffect(() => {
-    let mounted = true;
-
-    const resolveOwner = async () => {
-      const supabase = getSupabaseBrowserClient();
-      if (!supabase) return;
-
-      const { data } = await supabase.auth.getUser();
-      if (mounted) {
-        setOwnerUserId(data.user?.id ?? null);
+  const loadRequirements = useCallback(async () => {
+    try {
+      if (!session?.access_token) {
+        throw new Error("Authentication is required.");
       }
-    };
 
-    void resolveOwner();
-
-    return () => {
-      mounted = false;
-    };
-  }, []);
+      const result = await listEmployerRequirementsFn({
+        data: {},
+        headers: {
+          Authorization: `Bearer ${session.access_token}`,
+        },
+      });
+      if (result.configured) {
+        commit(result.requirements);
+        setMessage("");
+        return;
+      }
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : "Unable to load employer requirements.");
+      return;
+    }
+  }, [commit, session?.access_token]);
 
   const editingRequirement = useMemo(
     () => requirements.find((r) => r.id === editingId) ?? null,
@@ -97,24 +98,9 @@ function EmployerJobsPage() {
     return next;
   }
 
-  function commit(next: EmployerRequirementRecord[]) {
-    setRequirements(next);
-    saveEmployerRequirements(next);
-  }
-
-  async function loadRequirements() {
-    try {
-      const result = await listEmployerRequirementsFn({ data: {} });
-      if (result.configured) {
-        commit(result.requirements);
-        return;
-      }
-    } catch {
-      // Fall back to local cache.
-    }
-
-    setRequirements(readEmployerRequirements());
-  }
+  useEffect(() => {
+    void loadRequirements();
+  }, [loadRequirements]);
 
   function reset() {
     setForm(emptyForm);
@@ -130,11 +116,17 @@ function EmployerJobsPage() {
     if (Object.keys(nextErrors).length > 0) return;
 
     try {
+      if (!session?.access_token) {
+        throw new Error("Authentication is required.");
+      }
+
       const result = await upsertEmployerRequirementFn({
         data: {
           id: editingRequirement?.id,
           payload: form,
-          ownerUserId: ownerUserId ?? undefined,
+        },
+        headers: {
+          Authorization: `Bearer ${session.access_token}`,
         },
       });
 
@@ -143,28 +135,18 @@ function EmployerJobsPage() {
           ? requirements.map((r) => (r.id === result.requirement!.id ? result.requirement! : r))
           : [result.requirement, ...requirements];
         commit(next);
-        setMessage(editingRequirement ? "Requirement updated successfully." : "Requirement created successfully.");
+        setMessage(
+          editingRequirement
+            ? "Requirement updated successfully."
+            : "Requirement created successfully.",
+        );
         reset();
         return;
       }
-    } catch {
-      // Fall back to local flow.
-    }
-
-    if (editingRequirement) {
-      const next = requirements.map((r) =>
-        r.id === editingRequirement.id ? updateEmployerRequirement(r, form) : r,
-      );
-      commit(next);
-      setMessage("Requirement updated successfully.");
-      reset();
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : "Unable to save employer requirement.");
       return;
     }
-
-    const created = createEmployerRequirement(form);
-    commit([created, ...requirements]);
-    setMessage("Requirement created successfully.");
-    reset();
   }
 
   function onEdit(requirement: EmployerRequirementRecord) {
@@ -203,37 +185,72 @@ function EmployerJobsPage() {
           </div>
         ) : null}
 
-        <h1 className="text-2xl font-heading font-bold text-[#0B3D91]">Employer Job Requirements</h1>
+        <h1 className="text-2xl font-heading font-bold text-[#0B3D91]">
+          Employer Job Requirements
+        </h1>
 
         <div className="grid xl:grid-cols-[1.1fr_1fr] gap-6">
-          <form onSubmit={(e) => void onSubmit(e)} className="rounded-3xl border border-[#E5E7EB] bg-white p-6 space-y-4">
+          <form
+            onSubmit={(e) => void onSubmit(e)}
+            className="rounded-3xl border border-[#E5E7EB] bg-white p-6 space-y-4"
+          >
             <div className="grid md:grid-cols-2 gap-4">
               <Field label="Employer Name" error={errors.employerName}>
-                <input className={inputClass(errors.employerName)} value={form.employerName} onChange={(e) => setField("employerName", e.target.value)} />
+                <input
+                  className={inputClass(errors.employerName)}
+                  value={form.employerName}
+                  onChange={(e) => setField("employerName", e.target.value)}
+                />
               </Field>
               <Field label="Job Title" error={errors.jobTitle}>
-                <input className={inputClass(errors.jobTitle)} value={form.jobTitle} onChange={(e) => setField("jobTitle", e.target.value)} />
+                <input
+                  className={inputClass(errors.jobTitle)}
+                  value={form.jobTitle}
+                  onChange={(e) => setField("jobTitle", e.target.value)}
+                />
               </Field>
             </div>
 
             <div className="grid md:grid-cols-2 gap-4">
               <Field label="Department">
-                <input className={inputClass()} value={form.department} onChange={(e) => setField("department", e.target.value)} />
+                <input
+                  className={inputClass()}
+                  value={form.department}
+                  onChange={(e) => setField("department", e.target.value)}
+                />
               </Field>
               <Field label="Client / Project" error={errors.clientProject}>
-                <input className={inputClass(errors.clientProject)} value={form.clientProject} onChange={(e) => setField("clientProject", e.target.value)} />
+                <input
+                  className={inputClass(errors.clientProject)}
+                  value={form.clientProject}
+                  onChange={(e) => setField("clientProject", e.target.value)}
+                />
               </Field>
             </div>
 
             <div className="grid md:grid-cols-3 gap-4">
               <Field label="Location">
-                <input className={inputClass()} value={form.location} onChange={(e) => setField("location", e.target.value)} />
+                <input
+                  className={inputClass()}
+                  value={form.location}
+                  onChange={(e) => setField("location", e.target.value)}
+                />
               </Field>
               <Field label="Job Type">
-                <input className={inputClass()} value={form.jobType} onChange={(e) => setField("jobType", e.target.value)} />
+                <input
+                  className={inputClass()}
+                  value={form.jobType}
+                  onChange={(e) => setField("jobType", e.target.value)}
+                />
               </Field>
               <Field label="Work Mode">
-                <select className={inputClass()} value={form.workMode} onChange={(e) => setField("workMode", e.target.value as EmployerRequirementInput["workMode"])}>
+                <select
+                  className={inputClass()}
+                  value={form.workMode}
+                  onChange={(e) =>
+                    setField("workMode", e.target.value as EmployerRequirementInput["workMode"])
+                  }
+                >
                   <option>On-site</option>
                   <option>Remote</option>
                   <option>Hybrid</option>
@@ -243,13 +260,29 @@ function EmployerJobsPage() {
 
             <div className="grid md:grid-cols-3 gap-4">
               <Field label="Experience Level">
-                <input className={inputClass()} value={form.experienceLevel} onChange={(e) => setField("experienceLevel", e.target.value)} />
+                <input
+                  className={inputClass()}
+                  value={form.experienceLevel}
+                  onChange={(e) => setField("experienceLevel", e.target.value)}
+                />
               </Field>
               <Field label="Number of Openings">
-                <input type="number" min={1} className={inputClass()} value={form.numberOfOpenings} onChange={(e) => setField("numberOfOpenings", Number(e.target.value) || 1)} />
+                <input
+                  type="number"
+                  min={1}
+                  className={inputClass()}
+                  value={form.numberOfOpenings}
+                  onChange={(e) => setField("numberOfOpenings", Number(e.target.value) || 1)}
+                />
               </Field>
               <Field label="Status">
-                <select className={inputClass()} value={form.status} onChange={(e) => setField("status", e.target.value as EmployerRequirementInput["status"])}>
+                <select
+                  className={inputClass()}
+                  value={form.status}
+                  onChange={(e) =>
+                    setField("status", e.target.value as EmployerRequirementInput["status"])
+                  }
+                >
                   {statuses.map((status) => (
                     <option key={status}>{status}</option>
                   ))}
@@ -259,24 +292,50 @@ function EmployerJobsPage() {
 
             <div className="grid md:grid-cols-3 gap-4">
               <Field label="Start Date" error={errors.startDate}>
-                <input type="date" className={inputClass(errors.startDate)} value={form.startDate} onChange={(e) => setField("startDate", e.target.value)} />
+                <input
+                  type="date"
+                  className={inputClass(errors.startDate)}
+                  value={form.startDate}
+                  onChange={(e) => setField("startDate", e.target.value)}
+                />
               </Field>
               <Field label="Duration">
-                <input className={inputClass()} value={form.duration} onChange={(e) => setField("duration", e.target.value)} />
+                <input
+                  className={inputClass()}
+                  value={form.duration}
+                  onChange={(e) => setField("duration", e.target.value)}
+                />
               </Field>
               <Field label="Rate Range">
-                <input className={inputClass()} value={form.rateRange} onChange={(e) => setField("rateRange", e.target.value)} />
+                <input
+                  className={inputClass()}
+                  value={form.rateRange}
+                  onChange={(e) => setField("rateRange", e.target.value)}
+                />
               </Field>
             </div>
 
             <Field label="Required Skills" error={errors.requiredSkills}>
-              <textarea rows={2} className={inputClass(errors.requiredSkills)} value={form.requiredSkills} onChange={(e) => setField("requiredSkills", e.target.value)} />
+              <textarea
+                rows={2}
+                className={inputClass(errors.requiredSkills)}
+                value={form.requiredSkills}
+                onChange={(e) => setField("requiredSkills", e.target.value)}
+              />
             </Field>
             <Field label="Responsibilities">
-              <textarea rows={3} className={inputClass()} value={form.responsibilities} onChange={(e) => setField("responsibilities", e.target.value)} />
+              <textarea
+                rows={3}
+                className={inputClass()}
+                value={form.responsibilities}
+                onChange={(e) => setField("responsibilities", e.target.value)}
+              />
             </Field>
 
-            <button className="rounded-xl bg-[linear-gradient(135deg,#0B3D91_0%,#1DA1F2_100%)] px-4 py-2.5 text-sm font-semibold text-white" type="submit">
+            <button
+              className="rounded-xl bg-[linear-gradient(135deg,#0B3D91_0%,#1DA1F2_100%)] px-4 py-2.5 text-sm font-semibold text-white"
+              type="submit"
+            >
               {editingRequirement ? "Update Requirement" : "Create Requirement"}
             </button>
           </form>
@@ -290,10 +349,20 @@ function EmployerJobsPage() {
                 requirements.map((req) => (
                   <div key={req.id} className="rounded-xl border border-[#E5E7EB] p-3">
                     <p className="font-semibold text-slate-900">{req.jobTitle}</p>
-                    <p className="text-xs text-slate-500 mt-1">{req.employerName} • {req.clientProject}</p>
+                    <p className="text-xs text-slate-500 mt-1">
+                      {req.employerName} • {req.clientProject}
+                    </p>
                     <div className="mt-2 flex items-center justify-between">
-                      <span className="text-xs rounded-full bg-[#1DA1F2]/10 px-2 py-1 text-[#0B3D91]">{req.status}</span>
-                      <button type="button" onClick={() => onEdit(req)} className="text-xs font-semibold text-[#1DA1F2]">Edit</button>
+                      <span className="text-xs rounded-full bg-[#1DA1F2]/10 px-2 py-1 text-[#0B3D91]">
+                        {req.status}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => onEdit(req)}
+                        className="text-xs font-semibold text-[#1DA1F2]"
+                      >
+                        Edit
+                      </button>
                     </div>
                   </div>
                 ))

@@ -10,6 +10,8 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as ServicesRouteImport } from './routes/services'
+import { Route as NotificationsRouteImport } from './routes/notifications'
+import { Route as LoginRouteImport } from './routes/login'
 import { Route as EmployerRouteImport } from './routes/employer'
 import { Route as EmployeeRouteImport } from './routes/employee'
 import { Route as ContactRouteImport } from './routes/contact'
@@ -18,23 +20,42 @@ import { Route as CareersRouteImport } from './routes/careers'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as AboutRouteImport } from './routes/about'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as EmployeeIndexRouteImport } from './routes/employee.index'
 import { Route as EmployerTimesheetsRouteImport } from './routes/employer.timesheets'
 import { Route as EmployerReportsRouteImport } from './routes/employer.reports'
 import { Route as EmployerJobsRouteImport } from './routes/employer.jobs'
 import { Route as EmployerCandidatesRouteImport } from './routes/employer.candidates'
+import { Route as EmployeeTimesheetsRouteImport } from './routes/employee.timesheets'
+import { Route as EmployeeProfileRouteImport } from './routes/employee.profile'
+import { Route as EmployeeLeaveRouteImport } from './routes/employee.leave'
+import { Route as EmployeeDocumentsRouteImport } from './routes/employee.documents'
 import { Route as ClientTimesheetsRouteImport } from './routes/client.timesheets'
 import { Route as ClientResourcesRouteImport } from './routes/client.resources'
 import { Route as ClientRequirementsRouteImport } from './routes/client.requirements'
 import { Route as ClientInvoicesRouteImport } from './routes/client.invoices'
 import { Route as AdminTimesheetsRouteImport } from './routes/admin.timesheets'
 import { Route as AdminReportsRouteImport } from './routes/admin.reports'
+import { Route as AdminLeaveRouteImport } from './routes/admin.leave'
 import { Route as AdminJobsRouteImport } from './routes/admin.jobs'
 import { Route as AdminEmployeesRouteImport } from './routes/admin.employees'
+import { Route as AdminActivityRouteImport } from './routes/admin.activity'
+import { Route as AdminTimesheetsIdRouteImport } from './routes/admin.timesheets.$id'
+import { Route as AdminLeaveIdRouteImport } from './routes/admin.leave.$id'
 import { Route as AdminEmployeesIdRouteImport } from './routes/admin.employees.$id'
 
 const ServicesRoute = ServicesRouteImport.update({
   id: '/services',
   path: '/services',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const NotificationsRoute = NotificationsRouteImport.update({
+  id: '/notifications',
+  path: '/notifications',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LoginRoute = LoginRouteImport.update({
+  id: '/login',
+  path: '/login',
   getParentRoute: () => rootRouteImport,
 } as any)
 const EmployerRoute = EmployerRouteImport.update({
@@ -77,6 +98,11 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const EmployeeIndexRoute = EmployeeIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => EmployeeRoute,
+} as any)
 const EmployerTimesheetsRoute = EmployerTimesheetsRouteImport.update({
   id: '/timesheets',
   path: '/timesheets',
@@ -96,6 +122,26 @@ const EmployerCandidatesRoute = EmployerCandidatesRouteImport.update({
   id: '/candidates',
   path: '/candidates',
   getParentRoute: () => EmployerRoute,
+} as any)
+const EmployeeTimesheetsRoute = EmployeeTimesheetsRouteImport.update({
+  id: '/timesheets',
+  path: '/timesheets',
+  getParentRoute: () => EmployeeRoute,
+} as any)
+const EmployeeProfileRoute = EmployeeProfileRouteImport.update({
+  id: '/profile',
+  path: '/profile',
+  getParentRoute: () => EmployeeRoute,
+} as any)
+const EmployeeLeaveRoute = EmployeeLeaveRouteImport.update({
+  id: '/leave',
+  path: '/leave',
+  getParentRoute: () => EmployeeRoute,
+} as any)
+const EmployeeDocumentsRoute = EmployeeDocumentsRouteImport.update({
+  id: '/documents',
+  path: '/documents',
+  getParentRoute: () => EmployeeRoute,
 } as any)
 const ClientTimesheetsRoute = ClientTimesheetsRouteImport.update({
   id: '/timesheets',
@@ -127,6 +173,11 @@ const AdminReportsRoute = AdminReportsRouteImport.update({
   path: '/reports',
   getParentRoute: () => AdminRoute,
 } as any)
+const AdminLeaveRoute = AdminLeaveRouteImport.update({
+  id: '/leave',
+  path: '/leave',
+  getParentRoute: () => AdminRoute,
+} as any)
 const AdminJobsRoute = AdminJobsRouteImport.update({
   id: '/jobs',
   path: '/jobs',
@@ -136,6 +187,21 @@ const AdminEmployeesRoute = AdminEmployeesRouteImport.update({
   id: '/employees',
   path: '/employees',
   getParentRoute: () => AdminRoute,
+} as any)
+const AdminActivityRoute = AdminActivityRouteImport.update({
+  id: '/activity',
+  path: '/activity',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminTimesheetsIdRoute = AdminTimesheetsIdRouteImport.update({
+  id: '/$id',
+  path: '/$id',
+  getParentRoute: () => AdminTimesheetsRoute,
+} as any)
+const AdminLeaveIdRoute = AdminLeaveIdRouteImport.update({
+  id: '/$id',
+  path: '/$id',
+  getParentRoute: () => AdminLeaveRoute,
 } as any)
 const AdminEmployeesIdRoute = AdminEmployeesIdRouteImport.update({
   id: '/$id',
@@ -150,22 +216,33 @@ export interface FileRoutesByFullPath {
   '/careers': typeof CareersRoute
   '/client': typeof ClientRouteWithChildren
   '/contact': typeof ContactRoute
-  '/employee': typeof EmployeeRoute
+  '/employee': typeof EmployeeRouteWithChildren
   '/employer': typeof EmployerRouteWithChildren
+  '/login': typeof LoginRoute
+  '/notifications': typeof NotificationsRoute
   '/services': typeof ServicesRoute
+  '/admin/activity': typeof AdminActivityRoute
   '/admin/employees': typeof AdminEmployeesRouteWithChildren
   '/admin/jobs': typeof AdminJobsRoute
+  '/admin/leave': typeof AdminLeaveRouteWithChildren
   '/admin/reports': typeof AdminReportsRoute
-  '/admin/timesheets': typeof AdminTimesheetsRoute
+  '/admin/timesheets': typeof AdminTimesheetsRouteWithChildren
   '/client/invoices': typeof ClientInvoicesRoute
   '/client/requirements': typeof ClientRequirementsRoute
   '/client/resources': typeof ClientResourcesRoute
   '/client/timesheets': typeof ClientTimesheetsRoute
+  '/employee/documents': typeof EmployeeDocumentsRoute
+  '/employee/leave': typeof EmployeeLeaveRoute
+  '/employee/profile': typeof EmployeeProfileRoute
+  '/employee/timesheets': typeof EmployeeTimesheetsRoute
   '/employer/candidates': typeof EmployerCandidatesRoute
   '/employer/jobs': typeof EmployerJobsRoute
   '/employer/reports': typeof EmployerReportsRoute
   '/employer/timesheets': typeof EmployerTimesheetsRoute
+  '/employee/': typeof EmployeeIndexRoute
   '/admin/employees/$id': typeof AdminEmployeesIdRoute
+  '/admin/leave/$id': typeof AdminLeaveIdRoute
+  '/admin/timesheets/$id': typeof AdminTimesheetsIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -174,22 +251,32 @@ export interface FileRoutesByTo {
   '/careers': typeof CareersRoute
   '/client': typeof ClientRouteWithChildren
   '/contact': typeof ContactRoute
-  '/employee': typeof EmployeeRoute
   '/employer': typeof EmployerRouteWithChildren
+  '/login': typeof LoginRoute
+  '/notifications': typeof NotificationsRoute
   '/services': typeof ServicesRoute
+  '/admin/activity': typeof AdminActivityRoute
   '/admin/employees': typeof AdminEmployeesRouteWithChildren
   '/admin/jobs': typeof AdminJobsRoute
+  '/admin/leave': typeof AdminLeaveRouteWithChildren
   '/admin/reports': typeof AdminReportsRoute
-  '/admin/timesheets': typeof AdminTimesheetsRoute
+  '/admin/timesheets': typeof AdminTimesheetsRouteWithChildren
   '/client/invoices': typeof ClientInvoicesRoute
   '/client/requirements': typeof ClientRequirementsRoute
   '/client/resources': typeof ClientResourcesRoute
   '/client/timesheets': typeof ClientTimesheetsRoute
+  '/employee/documents': typeof EmployeeDocumentsRoute
+  '/employee/leave': typeof EmployeeLeaveRoute
+  '/employee/profile': typeof EmployeeProfileRoute
+  '/employee/timesheets': typeof EmployeeTimesheetsRoute
   '/employer/candidates': typeof EmployerCandidatesRoute
   '/employer/jobs': typeof EmployerJobsRoute
   '/employer/reports': typeof EmployerReportsRoute
   '/employer/timesheets': typeof EmployerTimesheetsRoute
+  '/employee': typeof EmployeeIndexRoute
   '/admin/employees/$id': typeof AdminEmployeesIdRoute
+  '/admin/leave/$id': typeof AdminLeaveIdRoute
+  '/admin/timesheets/$id': typeof AdminTimesheetsIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -199,22 +286,33 @@ export interface FileRoutesById {
   '/careers': typeof CareersRoute
   '/client': typeof ClientRouteWithChildren
   '/contact': typeof ContactRoute
-  '/employee': typeof EmployeeRoute
+  '/employee': typeof EmployeeRouteWithChildren
   '/employer': typeof EmployerRouteWithChildren
+  '/login': typeof LoginRoute
+  '/notifications': typeof NotificationsRoute
   '/services': typeof ServicesRoute
+  '/admin/activity': typeof AdminActivityRoute
   '/admin/employees': typeof AdminEmployeesRouteWithChildren
   '/admin/jobs': typeof AdminJobsRoute
+  '/admin/leave': typeof AdminLeaveRouteWithChildren
   '/admin/reports': typeof AdminReportsRoute
-  '/admin/timesheets': typeof AdminTimesheetsRoute
+  '/admin/timesheets': typeof AdminTimesheetsRouteWithChildren
   '/client/invoices': typeof ClientInvoicesRoute
   '/client/requirements': typeof ClientRequirementsRoute
   '/client/resources': typeof ClientResourcesRoute
   '/client/timesheets': typeof ClientTimesheetsRoute
+  '/employee/documents': typeof EmployeeDocumentsRoute
+  '/employee/leave': typeof EmployeeLeaveRoute
+  '/employee/profile': typeof EmployeeProfileRoute
+  '/employee/timesheets': typeof EmployeeTimesheetsRoute
   '/employer/candidates': typeof EmployerCandidatesRoute
   '/employer/jobs': typeof EmployerJobsRoute
   '/employer/reports': typeof EmployerReportsRoute
   '/employer/timesheets': typeof EmployerTimesheetsRoute
+  '/employee/': typeof EmployeeIndexRoute
   '/admin/employees/$id': typeof AdminEmployeesIdRoute
+  '/admin/leave/$id': typeof AdminLeaveIdRoute
+  '/admin/timesheets/$id': typeof AdminTimesheetsIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -227,20 +325,31 @@ export interface FileRouteTypes {
     | '/contact'
     | '/employee'
     | '/employer'
+    | '/login'
+    | '/notifications'
     | '/services'
+    | '/admin/activity'
     | '/admin/employees'
     | '/admin/jobs'
+    | '/admin/leave'
     | '/admin/reports'
     | '/admin/timesheets'
     | '/client/invoices'
     | '/client/requirements'
     | '/client/resources'
     | '/client/timesheets'
+    | '/employee/documents'
+    | '/employee/leave'
+    | '/employee/profile'
+    | '/employee/timesheets'
     | '/employer/candidates'
     | '/employer/jobs'
     | '/employer/reports'
     | '/employer/timesheets'
+    | '/employee/'
     | '/admin/employees/$id'
+    | '/admin/leave/$id'
+    | '/admin/timesheets/$id'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -249,22 +358,32 @@ export interface FileRouteTypes {
     | '/careers'
     | '/client'
     | '/contact'
-    | '/employee'
     | '/employer'
+    | '/login'
+    | '/notifications'
     | '/services'
+    | '/admin/activity'
     | '/admin/employees'
     | '/admin/jobs'
+    | '/admin/leave'
     | '/admin/reports'
     | '/admin/timesheets'
     | '/client/invoices'
     | '/client/requirements'
     | '/client/resources'
     | '/client/timesheets'
+    | '/employee/documents'
+    | '/employee/leave'
+    | '/employee/profile'
+    | '/employee/timesheets'
     | '/employer/candidates'
     | '/employer/jobs'
     | '/employer/reports'
     | '/employer/timesheets'
+    | '/employee'
     | '/admin/employees/$id'
+    | '/admin/leave/$id'
+    | '/admin/timesheets/$id'
   id:
     | '__root__'
     | '/'
@@ -275,20 +394,31 @@ export interface FileRouteTypes {
     | '/contact'
     | '/employee'
     | '/employer'
+    | '/login'
+    | '/notifications'
     | '/services'
+    | '/admin/activity'
     | '/admin/employees'
     | '/admin/jobs'
+    | '/admin/leave'
     | '/admin/reports'
     | '/admin/timesheets'
     | '/client/invoices'
     | '/client/requirements'
     | '/client/resources'
     | '/client/timesheets'
+    | '/employee/documents'
+    | '/employee/leave'
+    | '/employee/profile'
+    | '/employee/timesheets'
     | '/employer/candidates'
     | '/employer/jobs'
     | '/employer/reports'
     | '/employer/timesheets'
+    | '/employee/'
     | '/admin/employees/$id'
+    | '/admin/leave/$id'
+    | '/admin/timesheets/$id'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -298,8 +428,10 @@ export interface RootRouteChildren {
   CareersRoute: typeof CareersRoute
   ClientRoute: typeof ClientRouteWithChildren
   ContactRoute: typeof ContactRoute
-  EmployeeRoute: typeof EmployeeRoute
+  EmployeeRoute: typeof EmployeeRouteWithChildren
   EmployerRoute: typeof EmployerRouteWithChildren
+  LoginRoute: typeof LoginRoute
+  NotificationsRoute: typeof NotificationsRoute
   ServicesRoute: typeof ServicesRoute
 }
 
@@ -310,6 +442,20 @@ declare module '@tanstack/react-router' {
       path: '/services'
       fullPath: '/services'
       preLoaderRoute: typeof ServicesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/notifications': {
+      id: '/notifications'
+      path: '/notifications'
+      fullPath: '/notifications'
+      preLoaderRoute: typeof NotificationsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/login': {
+      id: '/login'
+      path: '/login'
+      fullPath: '/login'
+      preLoaderRoute: typeof LoginRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/employer': {
@@ -368,6 +514,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/employee/': {
+      id: '/employee/'
+      path: '/'
+      fullPath: '/employee/'
+      preLoaderRoute: typeof EmployeeIndexRouteImport
+      parentRoute: typeof EmployeeRoute
+    }
     '/employer/timesheets': {
       id: '/employer/timesheets'
       path: '/timesheets'
@@ -395,6 +548,34 @@ declare module '@tanstack/react-router' {
       fullPath: '/employer/candidates'
       preLoaderRoute: typeof EmployerCandidatesRouteImport
       parentRoute: typeof EmployerRoute
+    }
+    '/employee/timesheets': {
+      id: '/employee/timesheets'
+      path: '/timesheets'
+      fullPath: '/employee/timesheets'
+      preLoaderRoute: typeof EmployeeTimesheetsRouteImport
+      parentRoute: typeof EmployeeRoute
+    }
+    '/employee/profile': {
+      id: '/employee/profile'
+      path: '/profile'
+      fullPath: '/employee/profile'
+      preLoaderRoute: typeof EmployeeProfileRouteImport
+      parentRoute: typeof EmployeeRoute
+    }
+    '/employee/leave': {
+      id: '/employee/leave'
+      path: '/leave'
+      fullPath: '/employee/leave'
+      preLoaderRoute: typeof EmployeeLeaveRouteImport
+      parentRoute: typeof EmployeeRoute
+    }
+    '/employee/documents': {
+      id: '/employee/documents'
+      path: '/documents'
+      fullPath: '/employee/documents'
+      preLoaderRoute: typeof EmployeeDocumentsRouteImport
+      parentRoute: typeof EmployeeRoute
     }
     '/client/timesheets': {
       id: '/client/timesheets'
@@ -438,6 +619,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminReportsRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/admin/leave': {
+      id: '/admin/leave'
+      path: '/leave'
+      fullPath: '/admin/leave'
+      preLoaderRoute: typeof AdminLeaveRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/admin/jobs': {
       id: '/admin/jobs'
       path: '/jobs'
@@ -451,6 +639,27 @@ declare module '@tanstack/react-router' {
       fullPath: '/admin/employees'
       preLoaderRoute: typeof AdminEmployeesRouteImport
       parentRoute: typeof AdminRoute
+    }
+    '/admin/activity': {
+      id: '/admin/activity'
+      path: '/activity'
+      fullPath: '/admin/activity'
+      preLoaderRoute: typeof AdminActivityRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/timesheets/$id': {
+      id: '/admin/timesheets/$id'
+      path: '/$id'
+      fullPath: '/admin/timesheets/$id'
+      preLoaderRoute: typeof AdminTimesheetsIdRouteImport
+      parentRoute: typeof AdminTimesheetsRoute
+    }
+    '/admin/leave/$id': {
+      id: '/admin/leave/$id'
+      path: '/$id'
+      fullPath: '/admin/leave/$id'
+      preLoaderRoute: typeof AdminLeaveIdRouteImport
+      parentRoute: typeof AdminLeaveRoute
     }
     '/admin/employees/$id': {
       id: '/admin/employees/$id'
@@ -474,18 +683,46 @@ const AdminEmployeesRouteWithChildren = AdminEmployeesRoute._addFileChildren(
   AdminEmployeesRouteChildren,
 )
 
+interface AdminLeaveRouteChildren {
+  AdminLeaveIdRoute: typeof AdminLeaveIdRoute
+}
+
+const AdminLeaveRouteChildren: AdminLeaveRouteChildren = {
+  AdminLeaveIdRoute: AdminLeaveIdRoute,
+}
+
+const AdminLeaveRouteWithChildren = AdminLeaveRoute._addFileChildren(
+  AdminLeaveRouteChildren,
+)
+
+interface AdminTimesheetsRouteChildren {
+  AdminTimesheetsIdRoute: typeof AdminTimesheetsIdRoute
+}
+
+const AdminTimesheetsRouteChildren: AdminTimesheetsRouteChildren = {
+  AdminTimesheetsIdRoute: AdminTimesheetsIdRoute,
+}
+
+const AdminTimesheetsRouteWithChildren = AdminTimesheetsRoute._addFileChildren(
+  AdminTimesheetsRouteChildren,
+)
+
 interface AdminRouteChildren {
+  AdminActivityRoute: typeof AdminActivityRoute
   AdminEmployeesRoute: typeof AdminEmployeesRouteWithChildren
   AdminJobsRoute: typeof AdminJobsRoute
+  AdminLeaveRoute: typeof AdminLeaveRouteWithChildren
   AdminReportsRoute: typeof AdminReportsRoute
-  AdminTimesheetsRoute: typeof AdminTimesheetsRoute
+  AdminTimesheetsRoute: typeof AdminTimesheetsRouteWithChildren
 }
 
 const AdminRouteChildren: AdminRouteChildren = {
+  AdminActivityRoute: AdminActivityRoute,
   AdminEmployeesRoute: AdminEmployeesRouteWithChildren,
   AdminJobsRoute: AdminJobsRoute,
+  AdminLeaveRoute: AdminLeaveRouteWithChildren,
   AdminReportsRoute: AdminReportsRoute,
-  AdminTimesheetsRoute: AdminTimesheetsRoute,
+  AdminTimesheetsRoute: AdminTimesheetsRouteWithChildren,
 }
 
 const AdminRouteWithChildren = AdminRoute._addFileChildren(AdminRouteChildren)
@@ -506,6 +743,26 @@ const ClientRouteChildren: ClientRouteChildren = {
 
 const ClientRouteWithChildren =
   ClientRoute._addFileChildren(ClientRouteChildren)
+
+interface EmployeeRouteChildren {
+  EmployeeDocumentsRoute: typeof EmployeeDocumentsRoute
+  EmployeeLeaveRoute: typeof EmployeeLeaveRoute
+  EmployeeProfileRoute: typeof EmployeeProfileRoute
+  EmployeeTimesheetsRoute: typeof EmployeeTimesheetsRoute
+  EmployeeIndexRoute: typeof EmployeeIndexRoute
+}
+
+const EmployeeRouteChildren: EmployeeRouteChildren = {
+  EmployeeDocumentsRoute: EmployeeDocumentsRoute,
+  EmployeeLeaveRoute: EmployeeLeaveRoute,
+  EmployeeProfileRoute: EmployeeProfileRoute,
+  EmployeeTimesheetsRoute: EmployeeTimesheetsRoute,
+  EmployeeIndexRoute: EmployeeIndexRoute,
+}
+
+const EmployeeRouteWithChildren = EmployeeRoute._addFileChildren(
+  EmployeeRouteChildren,
+)
 
 interface EmployerRouteChildren {
   EmployerCandidatesRoute: typeof EmployerCandidatesRoute
@@ -532,8 +789,10 @@ const rootRouteChildren: RootRouteChildren = {
   CareersRoute: CareersRoute,
   ClientRoute: ClientRouteWithChildren,
   ContactRoute: ContactRoute,
-  EmployeeRoute: EmployeeRoute,
+  EmployeeRoute: EmployeeRouteWithChildren,
   EmployerRoute: EmployerRouteWithChildren,
+  LoginRoute: LoginRoute,
+  NotificationsRoute: NotificationsRoute,
   ServicesRoute: ServicesRoute,
 }
 export const routeTree = rootRouteImport

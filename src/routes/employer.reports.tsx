@@ -45,14 +45,25 @@ function EmployerReportsPage() {
 
         <div>
           <h1 className="text-2xl font-heading font-bold text-[#0B3D91]">Employer Reports</h1>
-          <p className="mt-1 text-slate-600">Hours by resource, project, and timesheet status insights.</p>
+          <p className="mt-1 text-slate-600">
+            Hours by resource, project, and timesheet status insights.
+          </p>
         </div>
 
         <div className="grid gap-4 sm:grid-cols-4">
           <Stat title="Active Resource Count" value={activeResources} />
-          <Stat title="Submitted Timesheets" value={timesheets.filter((t) => t.status === "Submitted").length} />
-          <Stat title="Approved Timesheets" value={timesheets.filter((t) => t.status === "Approved").length} />
-          <Stat title="Rejected Timesheets" value={timesheets.filter((t) => t.status === "Rejected").length} />
+          <Stat
+            title="Submitted Timesheets"
+            value={timesheets.filter((t) => t.status === "Submitted").length}
+          />
+          <Stat
+            title="Approved Timesheets"
+            value={timesheets.filter((t) => t.status === "Approved").length}
+          />
+          <Stat
+            title="Rejected Timesheets"
+            value={timesheets.filter((t) => t.status === "Rejected").length}
+          />
         </div>
 
         <div className="grid lg:grid-cols-2 gap-6">
@@ -63,7 +74,10 @@ function EmployerReportsPage() {
                 <p className="text-sm text-slate-500">No data available.</p>
               ) : (
                 hoursByResource.map((row) => (
-                  <div key={row.uid} className="flex items-center justify-between rounded-lg border border-[#E5E7EB] px-3 py-2">
+                  <div
+                    key={row.uid}
+                    className="flex items-center justify-between rounded-lg border border-[#E5E7EB] px-3 py-2"
+                  >
                     <div>
                       <p className="text-sm font-semibold text-slate-900">{row.name}</p>
                       <p className="text-xs text-slate-500">{row.uid}</p>
@@ -82,8 +96,13 @@ function EmployerReportsPage() {
                 <p className="text-sm text-slate-500">No data available.</p>
               ) : (
                 hoursByProject.map((row) => (
-                  <div key={row.project} className="flex items-center justify-between rounded-lg border border-[#E5E7EB] px-3 py-2">
-                    <p className="text-sm font-semibold text-slate-900">{row.project || "Unassigned"}</p>
+                  <div
+                    key={row.project}
+                    className="flex items-center justify-between rounded-lg border border-[#E5E7EB] px-3 py-2"
+                  >
+                    <p className="text-sm font-semibold text-slate-900">
+                      {row.project || "Unassigned"}
+                    </p>
                     <p className="text-sm font-bold text-[#0B3D91]">{row.hours} hrs</p>
                   </div>
                 ))

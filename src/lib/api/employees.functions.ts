@@ -6,7 +6,7 @@ import {
   createEmployee,
   updateEmployee,
 } from "@/lib/employees";
-import { getSupabaseServerClient } from "@/lib/supabase/server.server";
+import { requireAuthenticatedRole, requireServiceRoleClient } from "@/lib/api/auth.server";
 import type { EmployeeRow } from "@/lib/supabase/database.types";
 
 const employeeInputSchema = z.object({
@@ -98,10 +98,8 @@ function toRow(input: EmployeeInput, uid?: string) {
 export const listEmployeesFn = createServerFn({ method: "POST" })
   .inputValidator(listInputSchema)
   .handler(async ({ data }) => {
-    const client = getSupabaseServerClient();
-    if (!client) {
-      return { configured: false as const, employees: [] as EmployeeRecord[] };
-    }
+    await requireAuthenticatedRole(["admin"]);
+    const client = requireServiceRoleClient();
 
     let query = client.from("employees").select("*").order("updated_at", { ascending: false });
     if (data.id) {
@@ -110,7 +108,7 @@ export const listEmployeesFn = createServerFn({ method: "POST" })
 
     const { data: rows, error } = await query;
     if (error) {
-      throw new Error(`Failed to list employees: ${error.message}`);
+      throw new Error("Failed to list employees.");
     }
 
     return {
@@ -122,10 +120,8 @@ export const listEmployeesFn = createServerFn({ method: "POST" })
 export const upsertEmployeeFn = createServerFn({ method: "POST" })
   .inputValidator(upsertInputSchema)
   .handler(async ({ data }) => {
-    const client = getSupabaseServerClient();
-    if (!client) {
-      return { configured: false as const, employee: null as EmployeeRecord | null };
-    }
+    await requireAuthenticatedRole(["admin"]);
+    const client = requireServiceRoleClient();
 
     if (!data.id) {
       const created = createEmployee(data.payload);
@@ -136,7 +132,7 @@ export const upsertEmployeeFn = createServerFn({ method: "POST" })
         .single();
 
       if (error) {
-        throw new Error(`Failed to create employee: ${error.message}`);
+        throw new Error("Failed to create employee.");
       }
 
       return { configured: true as const, employee: toModel(inserted as EmployeeRow) };
@@ -149,7 +145,7 @@ export const upsertEmployeeFn = createServerFn({ method: "POST" })
       .single();
 
     if (currentError) {
-      throw new Error(`Failed to load employee: ${currentError.message}`);
+      throw new Error("Failed to load employee.");
     }
 
     const updated = updateEmployee(toModel(currentRow as EmployeeRow), data.payload);
@@ -161,7 +157,7 @@ export const upsertEmployeeFn = createServerFn({ method: "POST" })
       .single();
 
     if (error) {
-      throw new Error(`Failed to update employee: ${error.message}`);
+      throw new Error("Failed to update employee.");
     }
 
     return { configured: true as const, employee: toModel(updatedRow as EmployeeRow) };
@@ -170,14 +166,12 @@ export const upsertEmployeeFn = createServerFn({ method: "POST" })
 export const deleteEmployeeFn = createServerFn({ method: "POST" })
   .inputValidator(deleteInputSchema)
   .handler(async ({ data }) => {
-    const client = getSupabaseServerClient();
-    if (!client) {
-      return { configured: false as const };
-    }
+    await requireAuthenticatedRole(["admin"]);
+    const client = requireServiceRoleClient();
 
     const { error } = await client.from("employees").delete().eq("id", data.id);
     if (error) {
-      throw new Error(`Failed to delete employee: ${error.message}`);
+      throw new Error("Failed to delete employee.");
     }
 
     return { configured: true as const };

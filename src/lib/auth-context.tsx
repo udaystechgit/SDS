@@ -26,14 +26,7 @@ type AuthContextValue = {
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
 
 function readRoleFromUser(user: User | null): AppRole | null {
-  if (!user) {
-    return null;
-  }
-
-  return normalizeRole(
-    user.app_metadata?.role ??
-    user.user_metadata?.role
-  );
+  return normalizeRole(user?.app_metadata?.role);
 }
 
 export function AuthProvider({ children }: { children: ReactNode }) {

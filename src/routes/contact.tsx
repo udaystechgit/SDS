@@ -1,10 +1,21 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useState } from "react";
-import { z } from "zod";
+import { useRef, useState } from "react";
 import { SiteShell } from "@/components/SiteShell";
 import { PageHero } from "@/components/PageHero";
 import { Mail, Phone, MapPin, Clock, ArrowRight, CheckCircle2 } from "lucide-react";
-import logo from "@/assets/sds-logo.png";
+import logo from "@/assets/brand/sds-logo-transparent.png";
+import {
+  contactSubmissionSchema,
+  submitContactInquiryFn,
+  type ContactSubmissionInput,
+} from "@/lib/api/contact.functions";
+import {
+  COMPANY_ADDRESS,
+  COMPANY_EMAIL,
+  COMPANY_MAPS_URL,
+  COMPANY_PHONE_DISPLAY,
+  COMPANY_PHONE_TEL,
+} from "@/lib/company";
 import { buildSeoMeta } from "@/lib/seo";
 
 export const Route = createFileRoute("/contact")({
@@ -30,34 +41,7 @@ const inquiries = [
   "General Inquiry",
 ] as const;
 
-// Loose international phone regex — digits, spaces, +, -, () — 7-20 chars
-const phoneRegex = /^[+()\d][\d\s().-]{6,19}$/;
-
-const contactSchema = z.object({
-  name: z.string().trim().min(1, "Full name is required").max(100, "Name is too long"),
-  email: z
-    .string()
-    .trim()
-    .min(1, "Work email is required")
-    .email("Enter a valid email address")
-    .max(255),
-  company: z.string().trim().min(1, "Company name is required").max(150),
-  phone: z
-    .string()
-    .trim()
-    .max(30)
-    .optional()
-    .or(z.literal(""))
-    .refine((v) => !v || phoneRegex.test(v), "Enter a valid phone number"),
-  service: z.enum(inquiries, { message: "Please choose a service inquiry" }),
-  message: z
-    .string()
-    .trim()
-    .min(10, "Message must be at least 10 characters")
-    .max(2000, "Message is too long"),
-});
-
-type ContactValues = z.infer<typeof contactSchema>;
+type ContactValues = ContactSubmissionInput;
 type ContactErrors = Partial<Record<keyof ContactValues, string>>;
 
 const initial: ContactValues = {
@@ -73,15 +57,20 @@ function ContactPage() {
   const [values, setValues] = useState<ContactValues>(initial);
   const [errors, setErrors] = useState<ContactErrors>({});
   const [sent, setSent] = useState(false);
+  const [submitError, setSubmitError] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const lastSubmissionKey = useRef("");
 
   const update = <K extends keyof ContactValues>(key: K, v: ContactValues[K]) => {
     setValues((p) => ({ ...p, [key]: v }));
     if (errors[key]) setErrors((p) => ({ ...p, [key]: undefined }));
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const result = contactSchema.safeParse(values);
+    if (isSubmitting) return;
+
+    const result = contactSubmissionSchema.safeParse(values);
     if (!result.success) {
       const next: ContactErrors = {};
       for (const issue of result.error.issues) {
@@ -91,9 +80,30 @@ function ContactPage() {
       setErrors(next);
       return;
     }
+
+    const submissionKey = JSON.stringify(result.data);
+    if (submissionKey === lastSubmissionKey.current) {
+      setSent(true);
+      return;
+    }
+
     setErrors({});
-    setSent(true);
-    setValues(initial);
+    setSent(false);
+    setSubmitError("");
+    setIsSubmitting(true);
+
+    try {
+      await submitContactInquiryFn({ data: result.data });
+      lastSubmissionKey.current = submissionKey;
+      setSent(true);
+      setValues(initial);
+    } catch (error) {
+      setSubmitError(
+        error instanceof Error ? error.message : "Unable to submit your inquiry right now.",
+      );
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -101,7 +111,7 @@ function ContactPage() {
       <PageHero
         eyebrow="Contact"
         title="Let's Talk About Your Infrastructure Needs"
-        description="Tell us about your project. Our team in Chicago will respond within one business day."
+        description="Tell us about your project. Our Green Bay team will respond within one business day."
         image="https://images.unsplash.com/photo-1573164713988-8665fc963095?auto=format&fit=crop&w=1920&q=80"
       />
 
@@ -121,13 +131,27 @@ function ContactPage() {
               >
                 <CheckCircle2 className="h-5 w-5 mt-0.5 text-[color:var(--brand-deep)]" />
                 <p className="text-sm font-medium text-[color:var(--brand-deep)]">
-                  Thank you! Your inquiry has been received. Our SDS Consulting team will
-                  contact you shortly.
+                  Thank you! Your inquiry has been received. Our SDS Consulting team will contact
+                  you shortly.
                 </p>
               </div>
             )}
 
-            <form noValidate onSubmit={handleSubmit} className="mt-6 grid gap-4">
+            {submitError ? (
+              <div
+                role="alert"
+                className="mt-6 rounded-xl border border-destructive/30 bg-destructive/10 p-5 text-sm font-medium text-destructive"
+              >
+                {submitError}
+              </div>
+            ) : null}
+
+            <form
+              noValidate
+              onSubmit={(e) => void handleSubmit(e)}
+              className="mt-6 grid gap-4"
+              aria-busy={isSubmitting}
+            >
               <div className="grid sm:grid-cols-2 gap-4">
                 <Field
                   label="Full Name"
@@ -186,7 +210,9 @@ function ContactPage() {
                   }`}
                 >
                   {inquiries.map((i) => (
-                    <option key={i} value={i}>{i}</option>
+                    <option key={i} value={i}>
+                      {i}
+                    </option>
                   ))}
                 </select>
                 {errors.service && (
@@ -217,9 +243,10 @@ function ContactPage() {
 
               <button
                 type="submit"
-                className="mt-2 inline-flex justify-center items-center gap-2 px-6 py-3 rounded-full bg-gradient-brand text-white font-semibold shadow-brand hover:opacity-95"
+                disabled={isSubmitting}
+                className="mt-2 inline-flex justify-center items-center gap-2 px-6 py-3 rounded-full bg-gradient-brand text-white font-semibold shadow-brand hover:opacity-95 disabled:cursor-not-allowed disabled:opacity-70"
               >
-                Send message <ArrowRight className="h-4 w-4" />
+                {isSubmitting ? "Sending..." : "Send message"} <ArrowRight className="h-4 w-4" />
               </button>
             </form>
           </div>
@@ -227,31 +254,54 @@ function ContactPage() {
           {/* Info */}
           <div className="lg:col-span-2 space-y-6">
             <div className="rounded-3xl bg-[color:var(--navy)] text-white p-8 shadow-brand">
-              <img src={logo} alt="SDS Consulting Services" className="h-14 w-auto bg-white rounded-xl p-1.5 mb-5" />
+              <img
+                src={logo}
+                alt="SDS Consulting Services"
+                className="mb-5 h-auto w-48 object-contain"
+              />
               <h2 className="font-heading font-bold text-xl">SDS Consulting Services</h2>
               <p className="mt-1 text-sm text-white/70">
                 AI Data Center Staffing & Infrastructure Experts
               </p>
               <ul className="mt-6 space-y-4 text-sm">
-                <li className="flex items-start gap-3"><MapPin className="h-5 w-5 text-[color:var(--brand-bright)]" /> Address: To be updated</li>
-                <li className="flex items-start gap-3"><Mail className="h-5 w-5 text-[color:var(--brand-bright)]" /> hr@sdsconsultingservice.com</li>
-                <li className="flex items-start gap-3"><Phone className="h-5 w-5 text-[color:var(--brand-bright)]" /> Contact number: To be updated</li>
-                <li className="flex items-start gap-3"><Clock className="h-5 w-5 text-[color:var(--brand-bright)]" /> 24/7 NOC Support</li>
+                <li className="flex items-start gap-3">
+                  <MapPin className="h-5 w-5 text-[color:var(--brand-bright)]" />
+                  <a
+                    href={COMPANY_MAPS_URL}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="hover:text-white"
+                  >
+                    {COMPANY_ADDRESS}
+                  </a>
+                </li>
+                <li className="flex items-start gap-3">
+                  <Mail className="h-5 w-5 text-[color:var(--brand-bright)]" /> {COMPANY_EMAIL}
+                </li>
+                <li className="flex items-start gap-3">
+                  <Phone className="h-5 w-5 text-[color:var(--brand-bright)]" />
+                  <a href={`tel:${COMPANY_PHONE_TEL}`} className="hover:text-white">
+                    {COMPANY_PHONE_DISPLAY}
+                  </a>
+                </li>
+                <li className="flex items-start gap-3">
+                  <Clock className="h-5 w-5 text-[color:var(--brand-bright)]" /> 24/7 NOC Support
+                </li>
               </ul>
             </div>
             <div className="rounded-3xl overflow-hidden border border-border img-hover-zoom">
               <img
                 src="https://images.unsplash.com/photo-1477959858617-67f85cf4f1df?auto=format&fit=crop&w=1200&q=80"
-                alt="Chicago skyline"
+                alt="SDS Consulting Services office location"
                 className="h-64 w-full object-cover"
                 loading="lazy"
               />
             </div>
             <div className="rounded-3xl bg-card border border-border p-6">
-              <h3 className="font-heading font-bold">Chicago Headquarters</h3>
+              <h3 className="font-heading font-bold">Green Bay Headquarters</h3>
               <p className="mt-2 text-sm text-muted-foreground">
-                Our Chicago HQ is home to our NOC, training center, and leadership team.
-                Visits by appointment only.
+                Our Green Bay office supports SDS Consulting Services operations, recruiting, and
+                client coordination. Visits by appointment only.
               </p>
             </div>
           </div>
@@ -303,7 +353,9 @@ function Field({
         }`}
       />
       {error && (
-        <p id={`${name}-error`} className="mt-1 text-xs text-destructive">{error}</p>
+        <p id={`${name}-error`} className="mt-1 text-xs text-destructive">
+          {error}
+        </p>
       )}
     </div>
   );

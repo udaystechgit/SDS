@@ -1,27 +1,40 @@
-# SDS
+# SDS AI Core
 
-## Supabase Backend
+SDS AI Core is a full-stack web platform for SDS Consulting Services, focused on AI data center staffing, infrastructure operations, and role-based workforce portals.
 
-This project now includes a Supabase backend foundation.
+## Project Docs
 
-1. Copy `.env.example` to `.env` and set values:
-	1. `VITE_SUPABASE_URL`
-	2. `VITE_SUPABASE_ANON_KEY`
-	3. `SUPABASE_SERVICE_ROLE_KEY`
-2. Run the migration in `supabase/migrations/20260606_init.sql`.
-3. Start the app and use Admin Jobs / Careers routes.
+- [Project Report](docs/project-report.md)
+- [Tech Stack](docs/tech-stack.md)
+- [Architecture](docs/architecture.md)
+- [Routes](docs/routes.md)
+- [Portals](docs/portals.md)
+- [Supabase Backend](docs/backend-supabase.md)
+- [Development Guide](docs/development.md)
 
-Design details: `docs/backend-supabase.md`
+## Public Website
 
-### Vercel + Supabase
+The marketing site includes the home page, services, about, careers, and contact pages. The current public contact details are:
 
-If your Supabase project is already connected to Vercel, set these Environment Variables in Vercel Project Settings for Production, Preview, and Development:
+- Email: `hr@sdsconsultingservice.com`
+- Phone: `+1 262-270-9899`
+- Address: `2761 Allied Street, 1st Floor, Green Bay, WI 54304`
 
-1. VITE_SUPABASE_URL
-2. VITE_SUPABASE_ANON_KEY
-3. SUPABASE_SERVICE_ROLE_KEY
+## Portal Areas
 
-Notes:
-1. VITE_ variables are embedded into the client build.
-2. SUPABASE_SERVICE_ROLE_KEY is server-only and must never be exposed in client code.
-3. After updating variables, redeploy on Vercel so build-time values are refreshed.
+- Admin: workforce, jobs, leave, timesheets, activity, and reporting
+- Employee: dashboard, profile, documents, leave, and timesheets
+- Employer: jobs, candidates, timesheets, and reports
+- Client: requirements, resources, timesheets, and invoices
+
+## Setup
+
+1. Install dependencies with `npm install`.
+2. Create a `.env` file with the required Supabase values:
+   - `VITE_SUPABASE_URL`
+   - `VITE_SUPABASE_ANON_KEY`
+   - `SUPABASE_SERVICE_ROLE_KEY`
+3. Start development with `npm run dev`.
+4. Build production output with `npm run build`.
+
+See [docs/development.md](docs/development.md) for detailed local workflow notes.

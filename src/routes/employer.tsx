@@ -38,7 +38,9 @@ function EmployerDashboardPage() {
       },
       {
         label: "Pending Timesheets",
-        value: timesheets.filter((t) => t.status === "Submitted" && t.employerApprovalStatus === "Pending").length,
+        value: timesheets.filter(
+          (t) => t.status === "Submitted" && t.employerApprovalStatus === "Pending",
+        ).length,
         icon: Clock3,
       },
       {
@@ -63,14 +65,19 @@ function EmployerDashboardPage() {
 
         <div>
           <h1 className="text-3xl font-heading font-bold text-[#0B3D91]">Employer Dashboard</h1>
-          <p className="mt-1 text-slate-600">Track requirements, resources, and timesheets for employer operations.</p>
+          <p className="mt-1 text-slate-600">
+            Track requirements, resources, and timesheets for employer operations.
+          </p>
         </div>
 
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
           {stats.map((stat) => {
             const Icon = stat.icon;
             return (
-              <div key={stat.label} className="rounded-2xl border border-[#E5E7EB] bg-white p-5 shadow-sm">
+              <div
+                key={stat.label}
+                className="rounded-2xl border border-[#E5E7EB] bg-white p-5 shadow-sm"
+              >
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-sm text-slate-600">{stat.label}</p>
@@ -98,7 +105,10 @@ function EmployerDashboardPage() {
 
 function QuickLink({ to, title }: { to: string; title: string }) {
   return (
-    <Link to={to} className="rounded-2xl border border-[#E5E7EB] bg-white p-5 shadow-sm hover:shadow-md transition-shadow">
+    <Link
+      to={to}
+      className="rounded-2xl border border-[#E5E7EB] bg-white p-5 shadow-sm hover:shadow-md transition-shadow"
+    >
       <p className="text-sm font-semibold text-[#0B3D91]">{title}</p>
       <p className="mt-2 inline-flex items-center gap-1 text-xs text-[#1DA1F2]">
         Open <ArrowRight className="h-3.5 w-3.5" />

@@ -75,8 +75,7 @@ export function updateJobRequirement(
   const nowIso = new Date().toISOString();
   const nextStatus = patch.status ?? current.status;
 
-  const shouldSetPostedDate =
-    current.status !== "Published" && nextStatus === "Published";
+  const shouldSetPostedDate = current.status !== "Published" && nextStatus === "Published";
 
   return {
     ...current,

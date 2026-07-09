@@ -24,9 +24,24 @@ function ReportsPage() {
 
     return [
       { label: "Total Employees", value: employees.length, icon: Users, color: "bg-[#0B3D91]" },
-      { label: "Active Employees", value: activeEmployees.length, icon: Users, color: "bg-emerald-600" },
-      { label: "Total Submitted Timesheets", value: submitted.length, icon: Clock, color: "bg-orange-500" },
-      { label: "Pending Admin Approval", value: pendingAdmin.length, icon: Clock, color: "bg-orange-600" },
+      {
+        label: "Active Employees",
+        value: activeEmployees.length,
+        icon: Users,
+        color: "bg-emerald-600",
+      },
+      {
+        label: "Total Submitted Timesheets",
+        value: submitted.length,
+        icon: Clock,
+        color: "bg-orange-500",
+      },
+      {
+        label: "Pending Admin Approval",
+        value: pendingAdmin.length,
+        icon: Clock,
+        color: "bg-orange-600",
+      },
       { label: "Approved Hours", value: approvedHours, icon: CheckCircle2, color: "bg-green-600" },
       { label: "Rejected Timesheets", value: rejected.length, icon: XCircle, color: "bg-red-600" },
     ];
@@ -49,7 +64,10 @@ function ReportsPage() {
   }, [timesheets]);
 
   const hoursByProject = useMemo(() => {
-    const map = new Map<string, { project: string; client: string; hours: number; timesheets: number }>();
+    const map = new Map<
+      string,
+      { project: string; client: string; hours: number; timesheets: number }
+    >();
     timesheets.forEach((ts) => {
       const key = `${ts.project}|${ts.client}`;
       const existing = map.get(key) || {
@@ -67,10 +85,26 @@ function ReportsPage() {
 
   const timesheetStatusSummary = useMemo(() => {
     return [
-      { status: "Draft", count: timesheets.filter((ts) => ts.status === "Draft").length, color: "bg-slate-100 text-slate-700" },
-      { status: "Submitted", count: timesheets.filter((ts) => ts.status === "Submitted").length, color: "bg-orange-100 text-orange-700" },
-      { status: "Approved", count: timesheets.filter((ts) => ts.status === "Approved").length, color: "bg-green-100 text-green-700" },
-      { status: "Rejected", count: timesheets.filter((ts) => ts.status === "Rejected").length, color: "bg-red-100 text-red-700" },
+      {
+        status: "Draft",
+        count: timesheets.filter((ts) => ts.status === "Draft").length,
+        color: "bg-slate-100 text-slate-700",
+      },
+      {
+        status: "Submitted",
+        count: timesheets.filter((ts) => ts.status === "Submitted").length,
+        color: "bg-orange-100 text-orange-700",
+      },
+      {
+        status: "Approved",
+        count: timesheets.filter((ts) => ts.status === "Approved").length,
+        color: "bg-green-100 text-green-700",
+      },
+      {
+        status: "Rejected",
+        count: timesheets.filter((ts) => ts.status === "Rejected").length,
+        color: "bg-red-100 text-red-700",
+      },
     ];
   }, [timesheets]);
 
@@ -90,13 +124,18 @@ function ReportsPage() {
           {stats.map((stat) => {
             const Icon = stat.icon;
             return (
-              <div key={stat.label} className="rounded-2xl border border-[#E5E7EB] bg-white p-5 shadow-sm hover:shadow-md transition-shadow">
+              <div
+                key={stat.label}
+                className="rounded-2xl border border-[#E5E7EB] bg-white p-5 shadow-sm hover:shadow-md transition-shadow"
+              >
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-sm text-slate-600">{stat.label}</p>
                     <p className="mt-2 text-3xl font-bold text-[#0B3D91]">{stat.value}</p>
                   </div>
-                  <span className={`flex h-12 w-12 items-center justify-center rounded-xl ${stat.color} text-white`}>
+                  <span
+                    className={`flex h-12 w-12 items-center justify-center rounded-xl ${stat.color} text-white`}
+                  >
                     <Icon className="h-6 w-6" />
                   </span>
                 </div>
@@ -131,11 +170,17 @@ function ReportsPage() {
                     hoursByEmployee.map((row) => (
                       <tr key={row.uid} className="border-b border-[#E5E7EB]/80">
                         <td className="py-3">
-                          <span className="font-mono text-xs font-semibold text-[#1DA1F2]">{row.uid}</span>
+                          <span className="font-mono text-xs font-semibold text-[#1DA1F2]">
+                            {row.uid}
+                          </span>
                         </td>
                         <td className="py-3 text-slate-900">{row.name}</td>
-                        <td className="py-3 text-right font-semibold text-[#0B3D91]">{row.hours}</td>
-                        <td className="py-3 text-right font-semibold text-green-600">{row.approved}</td>
+                        <td className="py-3 text-right font-semibold text-[#0B3D91]">
+                          {row.hours}
+                        </td>
+                        <td className="py-3 text-right font-semibold text-green-600">
+                          {row.approved}
+                        </td>
                       </tr>
                     ))
                   )}
@@ -167,11 +212,18 @@ function ReportsPage() {
                     </tr>
                   ) : (
                     hoursByProject.map((row) => (
-                      <tr key={`${row.project}|${row.client}`} className="border-b border-[#E5E7EB]/80">
+                      <tr
+                        key={`${row.project}|${row.client}`}
+                        className="border-b border-[#E5E7EB]/80"
+                      >
                         <td className="py-3 font-medium text-slate-900">{row.project}</td>
                         <td className="py-3 text-slate-700">{row.client || "-"}</td>
-                        <td className="py-3 text-right font-semibold text-[#0B3D91]">{row.hours}</td>
-                        <td className="py-3 text-right font-semibold text-slate-600">{row.timesheets}</td>
+                        <td className="py-3 text-right font-semibold text-[#0B3D91]">
+                          {row.hours}
+                        </td>
+                        <td className="py-3 text-right font-semibold text-slate-600">
+                          {row.timesheets}
+                        </td>
                       </tr>
                     ))
                   )}
@@ -182,7 +234,9 @@ function ReportsPage() {
         </div>
 
         <section className="rounded-2xl border border-[#E5E7EB] bg-white p-6 shadow-sm">
-          <h2 className="text-lg font-heading font-bold text-[#0B3D91]">Timesheet Status Summary</h2>
+          <h2 className="text-lg font-heading font-bold text-[#0B3D91]">
+            Timesheet Status Summary
+          </h2>
           <p className="mt-1 text-xs text-slate-600">Overview of all timesheets by status.</p>
 
           <div className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">

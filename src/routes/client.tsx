@@ -32,7 +32,9 @@ function ClientDashboardPage() {
   const cards = [
     {
       label: "Open Service Requirements",
-      value: requirements.filter((r) => ["Submitted", "Under Review", "Approved", "In Progress"].includes(r.status)).length,
+      value: requirements.filter((r) =>
+        ["Submitted", "Under Review", "Approved", "In Progress"].includes(r.status),
+      ).length,
       icon: ClipboardList,
     },
     {
@@ -42,7 +44,9 @@ function ClientDashboardPage() {
     },
     {
       label: "Pending Timesheets",
-      value: timesheets.filter((t) => t.status === "Submitted" && t.clientApprovalStatus === "Pending").length,
+      value: timesheets.filter(
+        (t) => t.status === "Submitted" && t.clientApprovalStatus === "Pending",
+      ).length,
       icon: Clock3,
     },
     {
@@ -75,14 +79,19 @@ function ClientDashboardPage() {
 
         <div>
           <h1 className="text-3xl font-heading font-bold text-[#0B3D91]">Client Dashboard</h1>
-          <p className="mt-1 text-slate-600">Submit requirements, review resources, approve timesheets, and monitor invoices.</p>
+          <p className="mt-1 text-slate-600">
+            Submit requirements, review resources, approve timesheets, and monitor invoices.
+          </p>
         </div>
 
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {cards.map((card) => {
             const Icon = card.icon;
             return (
-              <div key={card.label} className="rounded-2xl border border-[#E5E7EB] bg-white p-5 shadow-sm">
+              <div
+                key={card.label}
+                className="rounded-2xl border border-[#E5E7EB] bg-white p-5 shadow-sm"
+              >
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-sm text-slate-600">{card.label}</p>
@@ -110,7 +119,10 @@ function ClientDashboardPage() {
 
 function QuickLink({ to, title }: { to: string; title: string }) {
   return (
-    <Link to={to} className="rounded-2xl border border-[#E5E7EB] bg-white p-5 shadow-sm hover:shadow-md transition-shadow">
+    <Link
+      to={to}
+      className="rounded-2xl border border-[#E5E7EB] bg-white p-5 shadow-sm hover:shadow-md transition-shadow"
+    >
       <p className="text-sm font-semibold text-[#0B3D91]">{title}</p>
       <p className="mt-2 inline-flex items-center gap-1 text-xs text-[#1DA1F2]">
         Open <ArrowRight className="h-3.5 w-3.5" />

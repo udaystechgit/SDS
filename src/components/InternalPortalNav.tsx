@@ -1,10 +1,14 @@
-import { Link, useLocation } from "@tanstack/react-router";
+import { Link, useLocation, useNavigate } from "@tanstack/react-router";
 
-export type InternalPortalType = "admin" | "employer" | "client";
+import { NotificationBell } from "@/components/NotificationBell";
+import { useAuth } from "@/lib/auth-context";
+
+export type InternalPortalType = "admin" | "employer" | "client" | "employee";
 
 type PortalLink = {
   to: string;
   label: string;
+  disabled?: boolean;
 };
 
 const LINKS: Record<InternalPortalType, PortalLink[]> = {
@@ -29,17 +33,51 @@ const LINKS: Record<InternalPortalType, PortalLink[]> = {
     { to: "/client/timesheets", label: "Timesheets" },
     { to: "/client/invoices", label: "Invoices" },
   ],
+  employee: [
+    { to: "/employee", label: "Dashboard" },
+    { to: "/employee/profile", label: "Profile" },
+    { to: "/employee/timesheets", label: "Timesheets" },
+    { to: "/employee/leave", label: "Leave" },
+    { to: "/employee/documents", label: "Documents" },
+    { to: "/employee/payroll", label: "Payroll", disabled: true },
+    { to: "/employee/benefits", label: "Benefits", disabled: true },
+    { to: "/employee/training", label: "Training", disabled: true },
+    { to: "/employee/settings", label: "Settings", disabled: true },
+  ],
 };
 
 export function InternalPortalNav({ portal }: { portal: InternalPortalType }) {
   const location = useLocation();
+  const navigate = useNavigate();
+  const { logout } = useAuth();
   const links = LINKS[portal];
+
+  async function onLogout() {
+    await logout();
+    await navigate({ to: "/login" });
+  }
 
   return (
     <div className="border-b border-[#E5E7EB] bg-white/90 backdrop-blur">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="flex items-center gap-1 overflow-x-auto">
           {links.map((link) => {
+            if (link.disabled) {
+              return (
+                <span
+                  key={link.to}
+                  aria-disabled="true"
+                  className="whitespace-nowrap px-4 py-3 text-sm font-medium text-slate-400"
+                  title="Coming Soon"
+                >
+                  {link.label}
+                  <span className="ml-1 text-[10px] font-semibold uppercase tracking-wide text-slate-400">
+                    Coming Soon
+                  </span>
+                </span>
+              );
+            }
+
             const isActive =
               location.pathname === link.to ||
               (link.to !== `/${portal}` && location.pathname.startsWith(link.to));
@@ -58,6 +96,16 @@ export function InternalPortalNav({ portal }: { portal: InternalPortalType }) {
               </Link>
             );
           })}
+          <div className="ml-auto">
+            <NotificationBell />
+          </div>
+          <button
+            type="button"
+            onClick={() => void onLogout()}
+            className="whitespace-nowrap px-4 py-3 text-sm font-medium text-slate-600 transition-colors hover:text-[#0B3D91]"
+          >
+            Logout
+          </button>
         </div>
       </div>
     </div>

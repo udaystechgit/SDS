@@ -6,6 +6,10 @@ import tsconfigPaths from "vite-tsconfig-paths";
 import { nitro } from "nitro/vite";
 
 export default defineConfig({
+  server: {
+    host: "localhost",
+    port: 5173,
+  },
   plugins: [
     tsconfigPaths({
       projects: ["./tsconfig.json"],

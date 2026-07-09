@@ -2,11 +2,11 @@
 
 ## Prerequisites
 
-| Tool | Version | Install |
-|---|---|---|
-| Bun | ≥ 1.1 | `curl -fsSL https://bun.sh/install \| bash` |
-| Node.js | ≥ 20 (fallback) | [nodejs.org](https://nodejs.org) |
-| Git | any | [git-scm.com](https://git-scm.com) |
+| Tool    | Version           | Install                                  |
+| ------- | ----------------- | ---------------------------------------- |
+| Node.js | 22.x              | [nodejs.org](https://nodejs.org)         |
+| npm     | bundled with Node | [docs.npmjs.com](https://docs.npmjs.com) |
+| Git     | any               | [git-scm.com](https://git-scm.com)       |
 
 ---
 
@@ -15,9 +15,9 @@
 ```bash
 git clone https://github.com/udaybhaskar0699/sds-ai-core.git
 cd sds-ai-core
-bun install
+npm install
 cp .env.example .env   # fill in any required values
-bun run dev
+npm run dev
 ```
 
 The dev server starts at **http://localhost:5173** with HMR enabled.
@@ -29,12 +29,12 @@ The dev server starts at **http://localhost:5173** with HMR enabled.
 Create a `.env` file at the project root. Variables prefixed with `VITE_` are exposed to the browser.
 
 ```dotenv
-# Public — safe to ship to the browser
-VITE_APP_NAME=SDS AI Core
+# Public Supabase values — safe to ship to the browser
+VITE_SUPABASE_URL=
+VITE_SUPABASE_ANON_KEY=
 
 # Server-only — never use VITE_ prefix for secrets
-DATABASE_URL=
-STRIPE_SECRET_KEY=
+SUPABASE_SERVICE_ROLE_KEY=
 ```
 
 Add server-only variables to the `getServerConfig()` function in `src/lib/config.server.ts`. Read them **inside** the function body, not at module scope (required for Cloudflare Workers compatibility).
@@ -44,11 +44,13 @@ Add server-only variables to the `getServerConfig()` function in `src/lib/config
 ## Code Conventions
 
 ### TypeScript
+
 - Strict mode is enabled (`tsconfig.json`)
 - All new files should be `.tsx` (React) or `.ts` (non-JSX)
 - Prefer named exports over default exports for components
 
 ### Imports
+
 Use the `@/` alias to import from `src/`:
 
 ```ts
@@ -57,6 +59,7 @@ import { buildSeoMeta } from "@/lib/seo";
 ```
 
 ### Styling
+
 - Use **Tailwind CSS utility classes** only
 - Component variants go through `class-variance-authority` (CVA)
 - The `cn()` helper from `src/lib/utils.ts` merges and dedupes classes:
@@ -67,6 +70,7 @@ import { cn } from "@/lib/utils";
 ```
 
 ### Forms
+
 Use **React Hook Form** + **Zod** for all forms:
 
 ```ts
@@ -133,8 +137,8 @@ const data = await fetchMyData();
 ## Linting & Formatting
 
 ```bash
-bun run lint       # ESLint
-bun run format     # Prettier (auto-fix)
+npm run lint       # ESLint
+npm run format     # Prettier (auto-fix)
 ```
 
 ESLint config: `eslint.config.js`
@@ -145,29 +149,31 @@ Prettier config: inline in `package.json` or `.prettierrc`
 ## Building for Production
 
 ```bash
-bun run build
+npm run build
 ```
 
 Output:
-- `dist/client/` — static client chunks (CDN-deployable)
-- `dist/server/` — SSR Node/Edge bundle
+
+- `.output/public/` — static client chunks and assets
+- `.output/server/` — SSR server bundle
 
 Preview the build locally:
 
 ```bash
-bun run preview
+npm run preview
 ```
 
 ---
 
 ## Deployment
 
-The app is an SSR application. It requires a server runtime that can execute the `dist/server/` bundle.
+The app is an SSR application. It requires a server runtime that can execute the `.output/server/` bundle.
 
 **Compatible runtimes:**
-- Node.js 20+ (standard server)
-- Cloudflare Workers (edge — see `config.server.ts` for env binding notes)
-- Any runtime supported by TanStack Start adapters
+
+- Node.js 22.x
+- Vercel with the TanStack Start framework setting
+- Any runtime supported by the configured TanStack Start/Nitro adapter
 
 For static export (no SSR), configure the TanStack Start adapter in `vite.config.ts`.
 
@@ -176,13 +182,19 @@ For static export (no SSR), configure the TanStack Start adapter in `vite.config
 ## Common Issues
 
 ### `routeTree.gen.ts` out of date
-Run `bun run dev` or `bun run build` to regenerate it. Never edit manually.
+
+Run `npm run dev` or `npm run build` to regenerate it. Never edit manually.
 
 ### TypeScript errors in editor but build passes
-The Vite build uses `esbuild` for transpilation and skips type-checking. Run `bunx tsc --noEmit` for a full type check.
+
+The Vite build uses `esbuild` for transpilation and skips type-checking. Run `npx tsc --noEmit` for a full type check.
 
 ### Port already in use
+
 Change the port in `vite.config.ts`:
+
 ```ts
-server: { port: 5174 }
+server: {
+  port: 5174;
+}
 ```
