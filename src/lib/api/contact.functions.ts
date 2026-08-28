@@ -62,6 +62,12 @@ export const submitContactInquiryFn = createServerFn({ method: "POST" })
     const { error } = await client.from("contact_submissions").insert(normalized);
 
     if (error) {
+      console.error("Contact submission failed", {
+        code: error.code,
+        message: error.message,
+        details: error.details,
+        hint: error.hint,
+      });
       setResponseStatus(500);
       throw new Error("Unable to submit your inquiry right now.");
     }
