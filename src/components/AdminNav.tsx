@@ -6,6 +6,7 @@ import {
   CalendarDays,
   Clock,
   LayoutDashboard,
+  Mail,
   Users,
 } from "lucide-react";
 
@@ -14,6 +15,7 @@ import { NotificationBell } from "@/components/NotificationBell";
 
 const adminLinks = [
   { to: "/admin", label: "Dashboard", icon: LayoutDashboard },
+  { to: "/admin/contacts", label: "Contacts", icon: Mail },
   { to: "/admin/jobs", label: "Jobs", icon: BriefcaseBusiness },
   { to: "/admin/employees", label: "Employees", icon: Users },
   { to: "/admin/timesheets", label: "Timesheets", icon: Clock },
