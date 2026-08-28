@@ -13,13 +13,10 @@ import appCss from "../styles.css?url";
 import { reportAppError } from "../lib/app-error-reporting";
 import { AuthProvider } from "@/lib/auth-context";
 import { AuthRouteGate } from "@/components/AuthRouteGate";
+import { AnalyticsConsentManager } from "@/components/AnalyticsConsent";
 import { companyJsonLd } from "@/lib/company";
 
 const companyJsonLdText = JSON.stringify(companyJsonLd);
-const googleAnalyticsMeasurementIdCandidate = import.meta.env.VITE_GA_MEASUREMENT_ID?.trim() ?? "";
-const googleAnalyticsMeasurementId = /^G-[A-Z0-9]+$/.test(googleAnalyticsMeasurementIdCandidate)
-  ? googleAnalyticsMeasurementIdCandidate
-  : null;
 
 function NotFoundComponent() {
   return (
@@ -121,25 +118,10 @@ function RootShell({ children }: { children: ReactNode }) {
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: companyJsonLdText }}
         />
-        {googleAnalyticsMeasurementId ? (
-          <>
-            <script
-              async
-              src={`https://www.googletagmanager.com/gtag/js?id=${googleAnalyticsMeasurementId}`}
-            />
-            <script
-              dangerouslySetInnerHTML={{
-                __html: `window.dataLayer = window.dataLayer || [];
-function gtag(){dataLayer.push(arguments);}
-gtag('js', new Date());
-gtag('config', '${googleAnalyticsMeasurementId}');`,
-              }}
-            />
-          </>
-        ) : null}
       </head>
       <body>
         {children}
+        <AnalyticsConsentManager />
         <Scripts />
       </body>
     </html>
