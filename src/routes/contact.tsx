@@ -9,6 +9,7 @@ import {
   submitContactInquiryFn,
   type ContactSubmissionInput,
 } from "@/lib/api/contact.functions";
+import { trackAnalyticsEvent } from "@/lib/analytics";
 import {
   COMPANY_ADDRESS,
   COMPANY_EMAIL,
@@ -78,6 +79,9 @@ function ContactPage() {
         if (k && !next[k]) next[k] = issue.message;
       }
       setErrors(next);
+      trackAnalyticsEvent("contact_form_validation_error", {
+        field_count: Object.keys(next).length,
+      });
       return;
     }
 
@@ -91,16 +95,19 @@ function ContactPage() {
     setSent(false);
     setSubmitError("");
     setIsSubmitting(true);
+    trackAnalyticsEvent("contact_form_submit_attempt", { service: result.data.service });
 
     try {
       await submitContactInquiryFn({ data: result.data });
       lastSubmissionKey.current = submissionKey;
       setSent(true);
       setValues(initial);
+      trackAnalyticsEvent("contact_form_submit", { service: result.data.service });
     } catch (error) {
       setSubmitError(
         error instanceof Error ? error.message : "Unable to submit your inquiry right now.",
       );
+      trackAnalyticsEvent("contact_form_error", { error_type: "submission_failed" });
     } finally {
       setIsSubmitting(false);
     }
@@ -117,7 +124,6 @@ function ContactPage() {
 
       <section className="py-20">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 grid lg:grid-cols-5 gap-10">
-          {/* Form */}
           <div className="lg:col-span-3 rounded-3xl bg-card border border-border p-8 md:p-10 shadow-brand">
             <h2 className="text-2xl md:text-3xl font-heading font-bold">Send us a message</h2>
             <p className="mt-2 text-sm text-muted-foreground">
@@ -251,7 +257,6 @@ function ContactPage() {
             </form>
           </div>
 
-          {/* Info */}
           <div className="lg:col-span-2 space-y-6">
             <div className="rounded-3xl bg-[color:var(--navy)] text-white p-8 shadow-brand">
               <img
@@ -271,16 +276,28 @@ function ContactPage() {
                     target="_blank"
                     rel="noopener noreferrer"
                     className="hover:text-white"
+                    onClick={() => trackAnalyticsEvent("contact_location_click")}
                   >
                     {COMPANY_ADDRESS}
                   </a>
                 </li>
                 <li className="flex items-start gap-3">
-                  <Mail className="h-5 w-5 text-[color:var(--brand-bright)]" /> {COMPANY_EMAIL}
+                  <Mail className="h-5 w-5 text-[color:var(--brand-bright)]" />
+                  <a
+                    href={`mailto:${COMPANY_EMAIL}`}
+                    className="hover:text-white"
+                    onClick={() => trackAnalyticsEvent("contact_email_click")}
+                  >
+                    {COMPANY_EMAIL}
+                  </a>
                 </li>
                 <li className="flex items-start gap-3">
                   <Phone className="h-5 w-5 text-[color:var(--brand-bright)]" />
-                  <a href={`tel:${COMPANY_PHONE_TEL}`} className="hover:text-white">
+                  <a
+                    href={`tel:${COMPANY_PHONE_TEL}`}
+                    className="hover:text-white"
+                    onClick={() => trackAnalyticsEvent("contact_phone_click")}
+                  >
                     {COMPANY_PHONE_DISPLAY}
                   </a>
                 </li>
