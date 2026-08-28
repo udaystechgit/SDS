@@ -32,6 +32,10 @@ export const ROUTE_ACCESS_META: Record<string, RouteAccessMeta> = {
     public: false,
     allowedRoles: ["admin", "staff"],
   },
+  "/admin/contacts": {
+    public: false,
+    allowedRoles: ["admin", "staff"],
+  },
   "/admin/jobs": {
     public: false,
     allowedRoles: ["admin", "staff"],
