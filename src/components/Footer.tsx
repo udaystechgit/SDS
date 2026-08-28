@@ -56,6 +56,11 @@ export function Footer() {
                 Contact
               </Link>
             </li>
+            <li>
+              <Link to="/privacy" className="hover:text-white">
+                Privacy Policy
+              </Link>
+            </li>
           </ul>
         </div>
 
