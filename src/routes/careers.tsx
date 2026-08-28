@@ -4,6 +4,7 @@ import { SiteShell } from "@/components/SiteShell";
 import { PageHero } from "@/components/PageHero";
 import { Briefcase, Heart, GraduationCap, Globe, ArrowRight } from "lucide-react";
 import logo from "@/assets/brand/sds-logo-transparent.png";
+import { trackAnalyticsEvent } from "@/lib/analytics";
 import { buildSeoMeta } from "@/lib/seo";
 import { getPublishedJobRequirements, readJobRequirements, type JobRequirement } from "@/lib/jobs";
 import { listJobRequirementsFn } from "@/lib/api/jobs.functions";
@@ -121,7 +122,6 @@ function CareersPage() {
         showLogo
       />
 
-      {/* Why */}
       <section className="py-20">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <h2 className="text-3xl md:text-4xl font-heading font-bold">Why work with us</h2>
@@ -145,7 +145,6 @@ function CareersPage() {
         </div>
       </section>
 
-      {/* Roles */}
       <section className="py-20 bg-secondary">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <h2 className="text-3xl md:text-4xl font-heading font-bold">Open roles</h2>
@@ -206,6 +205,12 @@ function CareersPage() {
                   </div>
                   <a
                     href="#apply"
+                    onClick={() =>
+                      trackAnalyticsEvent("job_application_start", {
+                        role_title: r.jobTitle,
+                        job_type: r.jobType,
+                      })
+                    }
                     className="inline-flex items-center gap-2 text-sm font-semibold text-[color:var(--brand-deep)] group-hover:gap-3 transition-all"
                   >
                     Apply <ArrowRight className="h-4 w-4" />
@@ -217,7 +222,6 @@ function CareersPage() {
         </div>
       </section>
 
-      {/* Culture */}
       <section className="py-20">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 grid lg:grid-cols-2 gap-12 items-center">
           <div className="img-hover-zoom rounded-3xl overflow-hidden shadow-brand">
@@ -243,7 +247,6 @@ function CareersPage() {
         </div>
       </section>
 
-      {/* Application form */}
       <section id="apply" className="py-20 bg-secondary">
         <div className="mx-auto max-w-3xl px-4 sm:px-6 lg:px-8">
           <div className="rounded-3xl bg-card border border-border p-8 md:p-10 shadow-brand">
