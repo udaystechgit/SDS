@@ -199,10 +199,15 @@ function CareersPage() {
         .from("resumes")
         .uploadToSignedUrl(upload.path, upload.token, resume, {
           contentType: resume.type,
+          cacheControl: "3600",
         });
 
       if (uploadError) {
-        throw new Error("Unable to upload your resume. Please try again.");
+        console.error("RESUME UPLOAD ERROR", {
+          message: uploadError.message,
+          name: uploadError.name,
+        });
+        throw new Error(`Unable to upload your resume: ${uploadError.message}`);
       }
 
       const result = await submitJobApplicationFn({
