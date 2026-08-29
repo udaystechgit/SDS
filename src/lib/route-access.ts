@@ -40,6 +40,10 @@ export const ROUTE_ACCESS_META: Record<string, RouteAccessMeta> = {
     public: false,
     allowedRoles: ["admin", "staff"],
   },
+  "/admin/applications": {
+    public: false,
+    allowedRoles: ["admin", "staff"],
+  },
   "/admin/employees": {
     public: false,
     allowedRoles: ["admin", "staff"],
