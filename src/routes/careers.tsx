@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, type FormEvent } from "react";
 import { SiteShell } from "@/components/SiteShell";
 import { PageHero } from "@/components/PageHero";
 import { Briefcase, Heart, GraduationCap, Globe, ArrowRight } from "lucide-react";
@@ -8,6 +8,11 @@ import { trackAnalyticsEvent } from "@/lib/analytics";
 import { buildSeoMeta } from "@/lib/seo";
 import { getPublishedJobRequirements, readJobRequirements, type JobRequirement } from "@/lib/jobs";
 import { listJobRequirementsFn } from "@/lib/api/jobs.functions";
+import {
+  prepareResumeUploadFn,
+  submitJobApplicationFn,
+} from "@/lib/api/job-applications.functions";
+import { getSupabaseBrowserClient } from "@/lib/supabase/client";
 
 export const Route = createFileRoute("/careers")({
   head: () => ({
@@ -44,9 +49,21 @@ const whys = [
   },
 ];
 
+const allowedResumeTypes = new Set([
+  "application/pdf",
+  "application/msword",
+  "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+]);
+
+const maxResumeBytes = 10 * 1024 * 1024;
+
 function CareersPage() {
   const [sent, setSent] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState("");
+  const [submittedRoleTitle, setSubmittedRoleTitle] = useState("");
   const [publishedRoles, setPublishedRoles] = useState<JobRequirement[]>([]);
+  const [selectedJobId, setSelectedJobId] = useState("");
   const [departmentFilter, setDepartmentFilter] = useState("All Departments");
   const [locationFilter, setLocationFilter] = useState("All Locations");
   const [jobTypeFilter, setJobTypeFilter] = useState("All Job Types");
@@ -59,21 +76,26 @@ function CareersPage() {
         const result = await listJobRequirementsFn({ data: { onlyPublished: true } });
         if (!cancelled && result.configured) {
           setPublishedRoles(result.jobs);
+          setSelectedJobId((current) => current || result.jobs[0]?.id || "");
           return;
         }
       } catch {
-        // Fall back to local storage data if backend is not available yet.
+        // Fall back to local storage data if backend is temporarily unavailable.
       }
 
       if (!cancelled) {
-        setPublishedRoles(getPublishedJobRequirements(readJobRequirements()));
+        const fallbackRoles = getPublishedJobRequirements(readJobRequirements());
+        setPublishedRoles(fallbackRoles);
+        setSelectedJobId((current) => current || fallbackRoles[0]?.id || "");
       }
     };
 
     void loadPublishedRoles();
 
     const sync = () => {
-      setPublishedRoles(getPublishedJobRequirements(readJobRequirements()));
+      const fallbackRoles = getPublishedJobRequirements(readJobRequirements());
+      setPublishedRoles(fallbackRoles);
+      setSelectedJobId((current) => current || fallbackRoles[0]?.id || "");
     };
 
     window.addEventListener("storage", sync);
@@ -83,8 +105,10 @@ function CareersPage() {
     };
   }, []);
 
-  const roleOptions =
-    publishedRoles.length > 0 ? publishedRoles.map((r) => r.jobTitle) : ["General Application"];
+  const selectedRole = useMemo(
+    () => publishedRoles.find((role) => role.id === selectedJobId) ?? publishedRoles[0] ?? null,
+    [publishedRoles, selectedJobId],
+  );
 
   const departmentOptions = useMemo(
     () => ["All Departments", ...new Set(publishedRoles.map((r) => r.department))],
@@ -111,6 +135,111 @@ function CareersPage() {
       return matchesDepartment && matchesLocation && matchesJobType;
     });
   }, [publishedRoles, departmentFilter, locationFilter, jobTypeFilter]);
+
+  function chooseRole(role: JobRequirement) {
+    setSelectedJobId(role.id);
+    setSent(false);
+    setSubmitError("");
+    trackAnalyticsEvent("job_application_start", {
+      role_title: role.jobTitle,
+      job_type: role.jobType,
+    });
+  }
+
+  async function submitApplication(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setSubmitError("");
+
+    if (!selectedRole) {
+      setSubmitError("Please select an open role before applying.");
+      return;
+    }
+
+    const form = event.currentTarget;
+    const formData = new FormData(form);
+    const resume = formData.get("resume");
+
+    if (!(resume instanceof File) || resume.size === 0) {
+      setSubmitError("Please upload your resume.");
+      return;
+    }
+
+    if (!allowedResumeTypes.has(resume.type)) {
+      setSubmitError("Resume must be a PDF, DOC, or DOCX file.");
+      return;
+    }
+
+    if (resume.size > maxResumeBytes) {
+      setSubmitError("Resume must be 10 MB or smaller.");
+      return;
+    }
+
+    const supabase = getSupabaseBrowserClient();
+    if (!supabase) {
+      setSubmitError("Application service is not configured.");
+      return;
+    }
+
+    setIsSubmitting(true);
+
+    try {
+      const upload = await prepareResumeUploadFn({
+        data: {
+          jobId: selectedRole.id,
+          fileName: resume.name,
+          mimeType: resume.type as
+            | "application/pdf"
+            | "application/msword"
+            | "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+          fileSize: resume.size,
+        },
+      });
+
+      const { error: uploadError } = await supabase.storage
+        .from("resumes")
+        .uploadToSignedUrl(upload.path, upload.token, resume, {
+          contentType: resume.type,
+        });
+
+      if (uploadError) {
+        throw new Error("Unable to upload your resume. Please try again.");
+      }
+
+      const result = await submitJobApplicationFn({
+        data: {
+          jobId: selectedRole.id,
+          fullName: String(formData.get("name") ?? ""),
+          email: String(formData.get("email") ?? ""),
+          phone: String(formData.get("phone") ?? ""),
+          aboutYourself: String(formData.get("message") ?? ""),
+          roleInterest: String(formData.get("roleInterest") ?? ""),
+          resumePath: upload.path,
+          resumeFilename: resume.name,
+          resumeMimeType: resume.type as
+            | "application/pdf"
+            | "application/msword"
+            | "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+          resumeSize: resume.size,
+        },
+      });
+
+      setSubmittedRoleTitle(result.jobTitle);
+      setSent(true);
+      form.reset();
+      trackAnalyticsEvent("job_application_submit", {
+        role_title: result.jobTitle,
+      });
+    } catch (error) {
+      setSubmitError(
+        error instanceof Error ? error.message : "Unable to submit your application right now.",
+      );
+      trackAnalyticsEvent("job_application_error", {
+        role_title: selectedRole.jobTitle,
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
+  }
 
   return (
     <SiteShell>
@@ -183,8 +312,7 @@ function CareersPage() {
 
           {publishedRoles.length === 0 ? (
             <div className="mt-10 rounded-2xl bg-card border border-border p-6 text-muted-foreground">
-              No open roles right now. Please send us your profile and we&apos;ll contact you when a
-              matching opportunity is available.
+              No open roles right now. Please check back for future opportunities.
             </div>
           ) : filteredPublishedRoles.length === 0 ? (
             <div className="mt-10 rounded-2xl bg-card border border-border p-6 text-muted-foreground">
@@ -205,12 +333,7 @@ function CareersPage() {
                   </div>
                   <a
                     href="#apply"
-                    onClick={() =>
-                      trackAnalyticsEvent("job_application_start", {
-                        role_title: r.jobTitle,
-                        job_type: r.jobType,
-                      })
-                    }
+                    onClick={() => chooseRole(r)}
                     className="inline-flex items-center gap-2 text-sm font-semibold text-[color:var(--brand-deep)] group-hover:gap-3 transition-all"
                   >
                     Apply <ArrowRight className="h-4 w-4" />
@@ -254,21 +377,21 @@ function CareersPage() {
               <img src={logo} alt="SDS Consulting Services" className="h-16 w-20 object-contain" />
               <div>
                 <h2 className="text-2xl font-heading font-bold">Apply to SDS</h2>
-                <p className="text-sm text-muted-foreground">We review every application.</p>
+                <p className="text-sm text-muted-foreground">
+                  {selectedRole
+                    ? `Applying for ${selectedRole.jobTitle}.`
+                    : "Select an open role above to apply."}
+                </p>
               </div>
             </div>
+
             {sent ? (
               <div className="rounded-xl bg-[color:var(--brand-bright)]/10 text-[color:var(--brand-deep)] p-6 font-medium">
-                Thanks! We received your application and will be in touch shortly.
+                Thanks! We received your application for {submittedRoleTitle} and will be in touch
+                shortly.
               </div>
             ) : (
-              <form
-                onSubmit={(e) => {
-                  e.preventDefault();
-                  setSent(true);
-                }}
-                className="grid gap-4"
-              >
+              <form onSubmit={(event) => void submitApplication(event)} className="grid gap-4">
                 <div className="grid sm:grid-cols-2 gap-4">
                   <Field label="Full name" name="name" required />
                   <Field label="Email" name="email" type="email" required />
@@ -277,14 +400,9 @@ function CareersPage() {
                   <Field label="Phone" name="phone" />
                   <div>
                     <label className="block text-sm font-medium mb-1.5">Role of interest</label>
-                    <select
-                      name="role"
-                      className="w-full rounded-lg border border-input bg-background px-3 py-2.5 text-sm"
-                    >
-                      {roleOptions.map((title) => (
-                        <option key={title}>{title}</option>
-                      ))}
-                    </select>
+                    <div className="flex min-h-11 items-center rounded-lg border border-input bg-slate-50 px-3 py-2.5 text-sm font-medium text-slate-700">
+                      {selectedRole?.jobTitle ?? "No open role selected"}
+                    </div>
                   </div>
                 </div>
                 <div>
@@ -295,11 +413,11 @@ function CareersPage() {
                     name="resume"
                     type="file"
                     required
-                    accept=".pdf,.doc,.docx"
+                    accept=".pdf,.doc,.docx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
                     className="w-full rounded-lg border border-input bg-background px-3 py-2.5 text-sm file:mr-4 file:rounded-md file:border-0 file:bg-[color:var(--brand-bright)]/15 file:px-3 file:py-1.5 file:text-[color:var(--brand-deep)] file:font-medium"
                   />
                   <p className="mt-1 text-xs text-muted-foreground">
-                    Accepted formats: PDF, DOC, DOCX
+                    Accepted formats: PDF, DOC, DOCX. Maximum size: 10 MB.
                   </p>
                 </div>
                 <div>
@@ -321,11 +439,20 @@ function CareersPage() {
                     placeholder="Share what excites you about this role and how your experience aligns."
                   />
                 </div>
+
+                {submitError ? (
+                  <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium text-red-700">
+                    {submitError}
+                  </div>
+                ) : null}
+
                 <button
                   type="submit"
-                  className="mt-2 inline-flex justify-center items-center gap-2 px-6 py-3 rounded-full bg-gradient-brand text-white font-semibold shadow-brand hover:opacity-95"
+                  disabled={isSubmitting || !selectedRole}
+                  className="mt-2 inline-flex justify-center items-center gap-2 px-6 py-3 rounded-full bg-gradient-brand text-white font-semibold shadow-brand hover:opacity-95 disabled:cursor-not-allowed disabled:opacity-60"
                 >
-                  Submit application <ArrowRight className="h-4 w-4" />
+                  {isSubmitting ? "Submitting application..." : "Submit application"}
+                  {!isSubmitting ? <ArrowRight className="h-4 w-4" /> : null}
                 </button>
               </form>
             )}
