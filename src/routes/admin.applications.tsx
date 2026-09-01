@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Download, RefreshCw, Search, UserRound } from "lucide-react";
+import { Download, Mail, RefreshCw, Search, UserRound } from "lucide-react";
 
 import { AdminNav } from "@/components/AdminNav";
 import { useAuth } from "@/lib/auth-context";
@@ -8,6 +8,7 @@ import {
   getJobApplicationActivityFn,
   getResumeDownloadUrlFn,
   listJobApplicationsFn,
+  notifyCandidateStatusFn,
   updateJobApplicationFn,
 } from "@/lib/api/admin-applications.functions";
 
@@ -66,6 +67,14 @@ const statuses: ApplicationStatus[] = [
   "withdrawn",
 ];
 
+const notifyableStatuses = new Set<ApplicationStatus>([
+  "shortlisted",
+  "interview",
+  "offered",
+  "hired",
+  "rejected",
+]);
+
 function AdminApplicationsPage() {
   const { session } = useAuth();
   const [applications, setApplications] = useState<Application[]>([]);
@@ -78,6 +87,7 @@ function AdminApplicationsPage() {
   const [notes, setNotes] = useState("");
   const [message, setMessage] = useState("");
   const [saving, setSaving] = useState(false);
+  const [notifying, setNotifying] = useState(false);
 
   const selected = applications.find((item) => item.id === selectedId) ?? applications[0] ?? null;
 
@@ -177,6 +187,27 @@ function AdminApplicationsPage() {
     }
   }
 
+  async function notifyCandidate() {
+    if (!selected || !session?.access_token || !notifyableStatuses.has(selected.status)) return;
+    setNotifying(true);
+    setMessage("");
+    try {
+      await notifyCandidateStatusFn({
+        data: {
+          id: selected.id,
+          status: selected.status as "shortlisted" | "interview" | "offered" | "hired" | "rejected",
+        },
+        headers: authHeaders,
+      });
+      setMessage(`${titleCase(selected.status)} email sent to ${selected.full_name}.`);
+      await loadActivity();
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : "Unable to notify candidate.");
+    } finally {
+      setNotifying(false);
+    }
+  }
+
   async function downloadResume() {
     if (!selected || !session?.access_token) return;
     try {
@@ -272,7 +303,18 @@ function AdminApplicationsPage() {
                   <div><label className="mb-2 block text-sm font-semibold text-slate-800">Status</label><select value={status} onChange={(e) => setStatus(e.target.value as ApplicationStatus)} className="w-full rounded-xl border border-[#E5E7EB] px-3 py-3 text-sm">{statuses.map((value) => <option key={value} value={value}>{titleCase(value)}</option>)}</select></div>
                   <div><label className="mb-2 block text-sm font-semibold text-slate-800">Internal notes</label><textarea value={notes} onChange={(e) => setNotes(e.target.value)} rows={5} className="w-full rounded-xl border border-[#E5E7EB] px-3 py-3 text-sm" placeholder="Private HR notes..." /></div>
                 </div>
-                <button disabled={saving} onClick={() => void saveChanges()} className="mt-4 rounded-xl bg-[linear-gradient(135deg,#0B3D91_0%,#1DA1F2_100%)] px-5 py-3 text-sm font-semibold text-white disabled:opacity-60">{saving ? "Saving..." : "Save Changes"}</button>
+                <div className="mt-4 flex flex-wrap gap-3">
+                  <button disabled={saving} onClick={() => void saveChanges()} className="rounded-xl bg-[linear-gradient(135deg,#0B3D91_0%,#1DA1F2_100%)] px-5 py-3 text-sm font-semibold text-white disabled:opacity-60">{saving ? "Saving..." : "Save Changes"}</button>
+                  {notifyableStatuses.has(selected.status) ? (
+                    <button disabled={notifying || status !== selected.status} onClick={() => void notifyCandidate()} className="inline-flex items-center gap-2 rounded-xl border border-[#0B3D91] bg-white px-5 py-3 text-sm font-semibold text-[#0B3D91] disabled:cursor-not-allowed disabled:opacity-50">
+                      <Mail className="h-4 w-4" />
+                      {notifying ? "Sending..." : `Notify Candidate: ${titleCase(selected.status)}`}
+                    </button>
+                  ) : null}
+                </div>
+                {notifyableStatuses.has(status) && status !== selected.status ? (
+                  <p className="mt-2 text-xs text-slate-500">Save the status first. You can then review and send the candidate notification separately.</p>
+                ) : null}
 
                 <div className="mt-8 border-t border-[#E5E7EB] pt-6"><h3 className="font-heading text-lg font-bold text-[#0B3D91]">Activity History</h3><div className="mt-4 space-y-3">{activity.length === 0 ? <p className="text-sm text-slate-500">No activity yet.</p> : activity.map((item) => <div key={item.id} className="rounded-xl border border-[#E5E7EB] p-4"><div className="flex flex-wrap items-center justify-between gap-2"><p className="text-sm font-semibold text-slate-800">{titleCase(item.action.replaceAll("_", " "))}</p><p className="text-xs text-slate-500">{new Date(item.created_at).toLocaleString()}</p></div>{item.old_status || item.new_status ? <p className="mt-1 text-xs text-slate-500">{item.old_status ? titleCase(item.old_status) : "—"} → {item.new_status ? titleCase(item.new_status) : "—"}</p> : null}{item.note ? <p className="mt-2 text-sm text-slate-600">{item.note}</p> : null}</div>)}</div></div>
               </>
